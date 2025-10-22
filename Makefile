@@ -1,78 +1,75 @@
-# ===============================
-# Makefile para app-ga (Minikube)
-# ===============================
+# Makefile para Kubernetes GA Optimizer
 
-# Nome da imagem
-IMAGE_NAME = app-ga
-IMAGE_TAG = latest
-DEPLOYMENT = app-ga
+# Variáveis
+APP_NAME = app-ga
+APP_IMAGE = $(APP_NAME):latest
+LOADTEST_IMAGE = $(APP_NAME)-loadtest:latest
 NAMESPACE = default
+MONITOR_NAMESPACE = monitoring
+LOADTEST_DURATION = 60
+LOADTEST_THREADS = 20
 
-# Caminho dos manifests Kubernetes
-MANIFESTS = manifests/app-ga-deployment.yaml manifests/app-ga-service.yaml manifests/app-ga-service-monitor.yaml
+# =====================================================
+# API
+# =====================================================
+.PHONY: build-api
+build-api:
+	docker build -t $(APP_IMAGE) .
 
-# ===============================
-#  Targets principais
-# ===============================
+.PHONY: push-api
+push-api:
+	docker push $(APP_IMAGE)
 
-## Builda a imagem dentro do Docker do Minikube
-build:
-	@echo "Conectando ao Docker do Minikube..."
-	eval $$(minikube docker-env) && \
-	echo "Buildando imagem $(IMAGE_NAME):$(IMAGE_TAG)..." && \
-	docker build -t $(IMAGE_NAME):$(IMAGE_TAG) .
+.PHONY: deploy-api
+deploy-api:
+	kubectl apply -f manifests/deployment.yaml
+	kubectl apply -f manifests/service.yaml
+	kubectl apply -f manifests/service-monitor.yaml
 
-## Carrega a imagem local no Minikube (caso tenha buildado fora)
-load:
-	@echo "Enviando imagem local para o Minikube..."
-	minikube image load $(IMAGE_NAME):$(IMAGE_TAG)
+.PHONY: delete-api
+delete-api:
+	kubectl delete -f manifests/deployment.yaml || true
+	kubectl delete -f manifests/service.yaml || true
+	kubectl delete -f manifests/service-monitor.yaml || true
 
-## Aplica (ou atualiza) os manifests do app no cluster
-apply:
-	@echo "Aplicando manifests..."
-	kubectl apply -f $(MANIFESTS)
+# =====================================================
+# Load Test
+# =====================================================
+.PHONY: build-loadtest
+build-loadtest:
+	docker build -t $(LOADTEST_IMAGE) tests/
 
-## Reinicia o Deployment para usar a nova imagem
-restart:
-	@echo "Reiniciando deployment $(DEPLOYMENT)..."
-	kubectl rollout restart deployment $(DEPLOYMENT) -n $(NAMESPACE)
+.PHONY: run-load-test
+run-load-test:
+	kubectl run -it --rm loadtest \
+		--image=$(LOADTEST_IMAGE) \
+		--restart=Never \
+		--env LOADTEST_DURATION=$(LOADTEST_DURATION) \
+		--env LOADTEST_THREADS=$(LOADTEST_THREADS)
 
-## Builda, aplica e reinicia (pipeline completo)
-deploy: build apply restart
-	@echo "Deploy completo! Aguarde alguns segundos para o pod iniciar."
+# =====================================================
+# Algoritmo Genético
+# =====================================================
+.PHONY: run-ga
+run-ga:
+	python ga/optimizer.py
 
-## Mostra os pods do app
-status:
-	@echo "Status dos pods:"
-	kubectl get pods -l app=$(DEPLOYMENT) -n $(NAMESPACE) -o wide
+# =====================================================
+# Monitoramento e debug
+# =====================================================
+.PHONY: logs-api
+logs-api:
+	kubectl logs -f deployment/$(APP_NAME)
 
-## Faz port-forward para acessar a API localmente
+.PHONY: port-forward
 port-forward:
-	@echo "Acessando API em http://localhost:8080"
-	kubectl port-forward svc/$(DEPLOYMENT) 8080:8080 -n $(NAMESPACE)
+	kubectl port-forward svc/$(APP_NAME) 8080:8080
 
-## Faz port-forward para acessar o Prometheus
-prometheus:
-	@echo "Acessando Prometheus em http://localhost:9090"
-	kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
-
-## Remove todos os recursos do app
+# =====================================================
+# Limpeza
+# =====================================================
+.PHONY: clean
 clean:
-	@echo "Limpando recursos..."
-	kubectl delete -f $(MANIFESTS) --ignore-not-found
-
-## Mostra logs do pod atual
-logs:
-	@echo "Logs do pod atual:"
-	kubectl logs -l app=$(DEPLOYMENT) -n $(NAMESPACE) -f
-
-## Abre um shell dentro do pod
-shell:
-	kubectl exec -it $$(kubectl get pod -l app=$(DEPLOYMENT) -o name -n $(NAMESPACE)) -- /bin/bash || \
-	kubectl exec -it $$(kubectl get pod -l app=$(DEPLOYMENT) -o name -n $(NAMESPACE)) -- /bin/sh
-
-## Mostra as métricas brutas (endpoint /metrics)
-metrics:
-	kubectl port-forward svc/$(DEPLOYMENT) 8000:8000 -n $(NAMESPACE) &
-	sleep 2
-	curl -s http://localhost:8000/metrics | head -20
+	docker rmi -f $(APP_IMAGE) || true
+	docker rmi -f $(LOADTEST_IMAGE) || true
+	kubectl delete pod -l app=loadtest || true
