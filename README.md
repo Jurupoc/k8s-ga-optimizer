@@ -50,6 +50,7 @@ A API oferece endpoints que simulam carga computacional, expõem métricas para 
 
 ## Estrutura de Arquivos
 
+ ```
 k8s-ga-optimizer/
 │
 ├── app/                     # Código-fonte da API
@@ -74,6 +75,7 @@ k8s-ga-optimizer/
 ├── requirements.txt         # Dependências Python
 ├── Makefile                 # Comandos para build, deploy e teste
 └── README.md                # Documentação do projeto
+ ```
 
 ## Makefile
 
@@ -90,3 +92,4 @@ O projeto inclui um Makefile completo que facilita todo o fluxo de desenvolvimen
 5. Monitoramento de logs e port forwarding
 
 6. Limpeza de imagens e pods temporários
+
