@@ -18,8 +18,8 @@ def search_number(size: int = 1000000, target: int = 42):
     return {"found": found}
 
 @app.get("/prime")
-def generate_primes(limit: int = 10000):
-    primes = prime.generate_primes(limit)
+def generate_primes(size: int = 10000):
+    primes = prime.generate_primes(size)
     return {"count": len(primes)}
 
 @app.get("/status")

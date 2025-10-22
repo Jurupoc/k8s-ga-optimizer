@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-ga
+  namespace: default
+  labels:
+    app: app-ga
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-ga
+  template:
+    metadata:
+      labels:
+        app: app-ga
+    spec:
+      containers:
+      - name: app-ga
+        image: app-ga:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+
