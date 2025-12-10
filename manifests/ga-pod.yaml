@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ga-optimizer
+  namespace: default
+spec:
+  restartPolicy: Never
+  serviceAccountName: ga-agent
+  containers:
+  - name: ga-optimizer
+    image: ga-optimizer:latest
+    imagePullPolicy: Never
+    command: ["python", "-u", "scripts/run_ga.py"]
+    env:
+    - name: PROM_URL
+      value: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+    - name: TARGET_DEPLOY
+      value: "app-ga"
+    - name: NAMESPACE
+      value: "default"
+    - name: GA_POPULATION
+      value: "6"
+    - name: GA_GENERATIONS
+      value: "3"
+    - name: GA_MUTATION
+      value: "0.1"

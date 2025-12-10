@@ -1,0 +1,15 @@
+# dockerfile.ga
+FROM python:3.13-slim
+
+WORKDIR /app
+COPY scripts ./scripts
+COPY ga ./ga
+COPY integrations ./integrations
+COPY load ./load
+COPY app ./app
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+ENV PYTHONUNBUFFERED=1
+CMD ["python", "-u", "scripts/run_ga.py"]

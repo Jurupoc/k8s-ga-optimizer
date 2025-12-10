@@ -1,0 +1,39 @@
+# rbac.yaml (exemplo)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ga-agent
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ga-agent-role
+  namespace: default
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "patch", "update"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/status"]
+    verbs: ["get", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ga-agent-rb
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: ga-agent
+    namespace: default
+roleRef:
+  kind: Role
+  name: ga-agent-role
+  apiGroup: rbac.authorization.k8s.io
