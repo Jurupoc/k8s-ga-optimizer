@@ -11,7 +11,7 @@ from prometheus_api_client.exceptions import PrometheusApiClientException
 
 from ga.exceptions import PrometheusError
 from ga.config import PrometheusConfig
-from ga.utils import log
+from shared.utils import log
 
 
 class PrometheusClient:

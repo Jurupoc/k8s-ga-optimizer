@@ -6,14 +6,13 @@ Arquitetura modular e escalável.
 
 from .optimizer import GeneticOptimizer, run
 from .types import Individual, FitnessMetrics, EvaluationResult, GenerationStats
-from .config import GAParameters, AppConfig, PrometheusConfig, LoadTestConfig
+from .config import GAParameters, AppConfig, PrometheusConfig
 from .exceptions import (
     GAException,
     ConfigurationError,
     EvaluationError,
     KubernetesError,
-    PrometheusError,
-    LoadTestError
+    PrometheusError
 )
 
 __all__ = [
@@ -29,12 +28,10 @@ __all__ = [
     "GAParameters",
     "AppConfig",
     "PrometheusConfig",
-    "LoadTestConfig",
     # Exceptions
     "GAException",
     "ConfigurationError",
     "EvaluationError",
     "KubernetesError",
     "PrometheusError",
-    "LoadTestError",
 ]

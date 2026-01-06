@@ -16,7 +16,8 @@ from ga.cache import EvaluationCache
 from integrations.prometheus_client import PrometheusClient
 from integrations.k8s_client import KubernetesClient
 from load.load_test import LoadTester
-from ga.utils import log
+from load.config import LoadTestConfig
+from shared.utils import log
 from ga.exceptions import GAException
 
 

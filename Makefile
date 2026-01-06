@@ -61,22 +61,14 @@ restart-api: delete-api
 # =====================================================
 # Load Test
 # =====================================================
-.PHONY: build-loadtest
-build-loadtest:
-	minikube image build -f ga/tests/dockerfile -t $(LOADTEST_IMAGE) ga/tests/
-
 .PHONY: run-load-test
 run-load-test:
-	kubectl run -it --rm loadtest \
-		--image=$(LOADTEST_IMAGE) \
-		--restart=Never \
-		--env LOADTEST_DURATION=$(LOADTEST_DURATION) \
-		--env LOADTEST_CONCURRENCY=$(LOADTEST_CONCURRENCY)
-
-.PHONY: run-load-test-local
-run-load-test-local:
-	$(PYTHON) -m load.load_test --url http://localhost:8080/sort?size=5000 \
-		--duration $(LOADTEST_DURATION) --concurrency $(LOADTEST_CONCURRENCY)
+	@if kubectl get job app-ga-loadtest -n $(NAMESPACE) >/dev/null 2>&1; then \
+		echo "Deletando job app-ga-loadtest existente..."; \
+		kubectl delete job app-ga-loadtest -n $(NAMESPACE); \
+	fi
+	minikube image build -f dockerfile.loadtest -t $(LOADTEST_IMAGE) .
+	kubectl apply -f manifests/job-loadtest.yaml
 
 # =====================================================
 # Algoritmo Genético

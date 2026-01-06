@@ -29,8 +29,3 @@ class PrometheusError(GAException):
     pass
 
 
-class LoadTestError(GAException):
-    """Erro durante execução de load test."""
-    pass
-
-

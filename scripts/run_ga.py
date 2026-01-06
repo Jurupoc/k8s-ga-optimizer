@@ -3,7 +3,6 @@
 Script principal para executar o algoritmo genético.
 """
 import sys
-import os
 from pathlib import Path
 
 # Adiciona o diretório raiz do projeto ao PYTHONPATH
@@ -18,7 +17,7 @@ from datetime import datetime
 
 from ga.optimizer import GeneticOptimizer
 from ga.config import GAParameters, AppConfig
-from ga.utils import log
+from shared.utils import log
 
 
 def main():
@@ -83,7 +82,7 @@ def main():
     log(f"Results saved to {output_path}")
 
     if best:
-        log(f"\n✅ Optimization complete!")
+        log("\n✅ Optimization complete!")
         log(f"Best configuration: {best}")
     else:
         log("\n⚠️ No valid configuration found")

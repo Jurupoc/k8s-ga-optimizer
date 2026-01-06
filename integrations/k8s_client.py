@@ -13,7 +13,7 @@ from kubernetes.client.rest import ApiException
 from ga.exceptions import KubernetesError, ConfigurationError
 from ga.config import AppConfig
 from ga.types import Individual
-from ga.utils import log
+from shared.utils import log
 
 
 class KubernetesClient:

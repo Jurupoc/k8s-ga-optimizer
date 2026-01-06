@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from ga.types import Individual
 from ga.config import GAParameters
 from ga.exceptions import ConfigurationError
-from ga.utils import log
+from shared.utils import log
 
 
 @dataclass

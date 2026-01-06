@@ -1,0 +1,21 @@
+# loadtest/Dockerfile
+# IMPORTANTE: Este Dockerfile deve ser construído a partir do diretório raiz do projeto
+# Exemplo: docker build -f Dockerfile.loadtest -t app-ga-loadtest .
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Copia arquivos do load
+COPY load/load_test.py .
+COPY load/main.py .
+COPY load/workload_profiles.py .
+COPY load/config.py .
+COPY load/exceptions.py .
+COPY load/requirements.txt .
+
+# Copia módulo shared
+COPY shared/ ./shared/
+
+RUN pip install --no-cache-dir requests
+
+CMD ["python", "main.py"]

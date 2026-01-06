@@ -9,10 +9,10 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 from threading import Lock
 
-from load.workload_profiles import WorkloadProfile, get_profile
-from ga.config import LoadTestConfig
-from ga.exceptions import LoadTestError
-from ga.utils import log
+from workload_profiles import WorkloadProfile, get_profile
+from config import LoadTestConfig
+from exceptions import LoadTestError
+from shared.utils import log
 
 
 @dataclass
@@ -145,15 +145,9 @@ class LoadTester:
             """Worker thread que executa requisições."""
             nonlocal success_count, fail_count
             worker_latencies = []
-            last_concurrency_check = start_time
-            current_concurrency = concurrency or (profile.base_concurrency if profile else self.config.concurrency)
 
+            log(f"Worker {worker_id} started", level="debug")
             while time.time() < end_time:
-                # Atualiza concorrência se usando perfil dinâmico
-                if profile and not concurrency:
-                    elapsed = time.time() - start_time
-                    current_concurrency = profile.get_concurrency_at(elapsed)
-
                 # Executa requisição
                 req_start = time.time()
                 try:
@@ -162,14 +156,21 @@ class LoadTester:
 
                     with lock:
                         if response.status_code == 200:
+                            log(f"Request status_code 200: {response.status_code} - {response.text}", level="debug")
                             success_count += 1
                             worker_latencies.append(latency)
                         else:
+                            log(f"Request status_code not 200: {response.status_code} - {response.text}", level="debug")
                             fail_count += 1
+
+                except requests.exceptions.Timeout:
+                    with lock:
+                        fail_count += 1
+                    log(f"Request timed out for worker {worker_id}", level="debug")
                 except Exception as e:
                     with lock:
                         fail_count += 1
-                    log(f"Request failed in worker {worker_id}: {e}", level="debug")
+                    log(f"Request failed in worker {worker_id}: {e}", level="info")
 
                 # Pequeno delay para evitar sobrecarga
                 time.sleep(0.01)

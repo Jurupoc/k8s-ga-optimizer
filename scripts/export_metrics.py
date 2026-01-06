@@ -16,7 +16,7 @@ import pandas as pd
 from typing import List, Dict, Any
 
 from ga.types import EvaluationResult, GenerationStats
-from ga.utils import log
+from shared.utils import log
 
 
 def export_to_csv(

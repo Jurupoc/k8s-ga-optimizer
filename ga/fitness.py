@@ -7,7 +7,7 @@ from typing import Dict, Optional
 from dataclasses import dataclass
 
 from ga.types import Individual, FitnessMetrics
-from ga.utils import log, safe_divide
+from shared.utils import log, safe_divide
 
 
 @dataclass
@@ -230,7 +230,7 @@ class FitnessEvaluator:
                 return 0.0, metrics
 
             # 3. Executa load test
-            load_test_url = f"{self.app_config.url}/sort?size=5000"
+            load_test_url = f"{self.app_config.url}/mixed"
             load_result = self.load_tester.run(load_test_url)
 
             # 4. Coleta métricas do Prometheus

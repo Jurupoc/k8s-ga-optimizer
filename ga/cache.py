@@ -10,7 +10,7 @@ from typing import Dict, Optional, Tuple
 from functools import lru_cache
 
 from ga.types import Individual, EvaluationResult
-from ga.utils import log
+from shared.utils import log
 
 
 class EvaluationCache:
