@@ -1,7 +1,14 @@
 # dockerfile.ga
+# IMPORTANTE: Este Dockerfile deve ser construído a partir do diretório raiz do projeto
+# Exemplo: docker build -f dockerfile.ga -t app-ga .
 FROM python:3.13-slim
 
 WORKDIR /app
+
+# Copia módulo shared
+COPY shared/ ./shared/
+
+# Copia módulos do projeto
 COPY scripts ./scripts
 COPY ga ./ga
 COPY integrations ./integrations

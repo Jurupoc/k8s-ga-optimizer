@@ -3,7 +3,7 @@
 Cálculo de fitness multicritério para o algoritmo genético.
 Considera throughput, latência, uso de recursos e taxa de erros.
 """
-from typing import Dict, Optional
+from typing import Optional
 from dataclasses import dataclass
 
 from ga.types import Individual, FitnessMetrics

@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from typing import Dict, List, Optional
 from threading import Lock
 
-from workload_profiles import WorkloadProfile, get_profile
-from config import LoadTestConfig
-from exceptions import LoadTestError
+from .workload_profiles import WorkloadProfile, get_profile
+from .config import LoadTestConfig
+from .exceptions import LoadTestError
 from shared.utils import log
 
 
@@ -201,8 +201,18 @@ class LoadTester:
             result.fail = fail_count
             result.finalize()
 
-            log(f"Load test completed: {result.success} success, {result.fail} failed, "
-                f"throughput={result.throughput:.2f} req/s, avg_latency={result.avg_latency*1000:.2f}ms")
+            log("Load test completed:")
+            log(f"  Requisições: {result.total} total ({result.success} sucesso, {result.fail} falhas)")
+            log(f"  Taxa de sucesso: {result.success_rate*100:.2f}%")
+            log(f"  Throughput: {result.throughput:.2f} req/s")
+            log(f"  Duração: {result.duration:.2f}s")
+            log("  Latências:")
+            log(f"    Média: {result.avg_latency*1000:.2f}ms")
+            log(f"    Mínima: {result.min_latency*1000:.2f}ms")
+            log(f"    Máxima: {result.max_latency*1000:.2f}ms")
+            log(f"    P50: {result.p50_latency*1000:.2f}ms")
+            log(f"    P95: {result.p95_latency*1000:.2f}ms")
+            log(f"    P99: {result.p99_latency*1000:.2f}ms")
 
             return result
 

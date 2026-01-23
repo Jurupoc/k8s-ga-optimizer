@@ -1,6 +1,5 @@
 import os
-from load_test import LoadTester
-from shared.utils import log
+from load.load_test import LoadTester
 
 
 def main() -> None:
@@ -17,7 +16,7 @@ def main() -> None:
 
     # Cria LoadTester (já lê as variáveis de ambiente via LoadTestConfig.from_env())
     load_tester = LoadTester()
-    target_url = f"{base_url}/cpu-stress"
+    target_url = f"{base_url}/mixed"
 
     # Executa o load test com a URL do ambiente
     load_tester.run(

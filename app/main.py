@@ -4,11 +4,11 @@ API de teste para simulação de microserviço real.
 Inclui endpoints CPU-bound, IO-bound e DB-bound.
 """
 import time
+import math
 import asyncio
 import socket
 import psutil
 from fastapi import FastAPI, Query
-from typing import Optional
 
 from app.compute import sort, search, prime
 from app.metrics import setup_metrics
@@ -170,30 +170,26 @@ def db_complex(
 
 @app.get("/mixed")
 async def mixed_workload(
-    cpu_iterations: int = Query(100000, ge=1000, le=10000000),
-    io_ops: int = Query(5, ge=1, le=50),
-    db_count: int = Query(10, ge=1, le=1000)
+    memory_size: int = Query(1024, ge=1, le=10485760),
+    cpu_iterations: int = Query(1000000, ge=10000, le=100000000)
 ):
     """
-    Endpoint misto: CPU + IO + DB.
+    Endpoint misto: Memória + CPU
     """
+
+    # Memória
+    memory_block = [i * 0.5 for i in range(memory_size)]
+
     # CPU
     result = 0
     for i in range(cpu_iterations):
-        result += i
+        result += math.sqrt(i) * math.sin(i)
 
-    # IO
-    for _ in range(io_ops):
-        await asyncio.sleep(0.01)
-
-    # DB
-    insert_items(db_count)
-    items = query_items(100)
+    time.sleep(0.1)
 
     return {
         "cpu_result": result,
-        "io_operations": io_ops,
-        "db_items": len(items)
+        "memory_items": len(memory_block)
     }
 
 

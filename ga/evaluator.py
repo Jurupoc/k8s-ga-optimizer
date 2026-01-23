@@ -21,11 +21,10 @@ from .prometheus_utils import (
     get_avg_cpu_usage,
     get_avg_memory_usage,
     get_request_rate,
-    query_instant,
 )
 
 
-PROMETHEUS_URL = os.environ.get("PROMETHEUS_URL", "http://localhost:9090")
+PROMETHEUS_URL = os.environ.get("PROM_URL", "http://localhost:9090")
 PROM_QUERY_TIMEOUT = int(os.environ.get("PROM_QUERY_TIMEOUT", "10"))
 LOAD_TEST_DURATION = int(os.environ.get("LOAD_TEST_DURATION", "30"))
 LOAD_TEST_CONCURRENCY = int(os.environ.get("LOAD_TEST_CONCURRENCY", "20"))
@@ -127,7 +126,7 @@ def evaluate_individual(config: Dict, skip_load_test: bool = False) -> float:
 
         # 2. Rodar teste de carga
         if not skip_load_test:
-            load_test_url = f"{APP_URL}/sort?size=5000"
+            load_test_url = f"{APP_URL}/mixed"
             log(f"Running load test: {load_test_url}")
             load_metrics = run_load_test(
                 load_test_url,
