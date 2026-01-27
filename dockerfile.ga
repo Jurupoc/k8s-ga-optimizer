@@ -5,13 +5,15 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Copia módulo shared
+# Copia módulo shared (usado por outros módulos)
 COPY shared/ ./shared/
+
+# Copia módulos de integração (usados por ga)
+COPY integrations ./integrations
 
 # Copia módulos do projeto
 COPY scripts ./scripts
 COPY ga ./ga
-COPY integrations ./integrations
 COPY load ./load
 COPY app ./app
 COPY requirements.txt .
@@ -19,4 +21,5 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 CMD ["python", "-u", "scripts/run_ga.py"]

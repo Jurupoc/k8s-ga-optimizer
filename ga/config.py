@@ -40,11 +40,11 @@ class GAParameters:
             ),
             cpu_limit_bounds=(
                 float(os.environ.get("GA_CPU_MIN", "0.1")),
-                float(os.environ.get("GA_CPU_MAX", "2.0"))
+                float(os.environ.get("GA_CPU_MAX", "4.0"))
             ),
             memory_limit_bounds=(
                 int(os.environ.get("GA_MEMORY_MIN", "128")),
-                int(os.environ.get("GA_MEMORY_MAX", "1024"))
+                int(os.environ.get("GA_MEMORY_MAX", "6000"))
             )
         )
 
@@ -73,7 +73,7 @@ class AppConfig:
 @dataclass
 class PrometheusConfig:
     """Configuração do Prometheus."""
-    url: str = "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+    url: str = "http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
     query_timeout: int = 10
     retry_attempts: int = 3
     retry_delay: float = 1.0
@@ -84,7 +84,7 @@ class PrometheusConfig:
         return cls(
             url=os.environ.get(
                 "PROMETHEUS_URL",
-                "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+                "http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
             ),
             query_timeout=int(os.environ.get("PROM_QUERY_TIMEOUT", "10")),
             retry_attempts=int(os.environ.get("PROM_RETRY_ATTEMPTS", "3")),

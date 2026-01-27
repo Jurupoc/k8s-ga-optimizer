@@ -5,8 +5,7 @@ Inclui validação, rollback automático, dry-run e espera confiável de rollout
 """
 import os
 import time
-import copy
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 

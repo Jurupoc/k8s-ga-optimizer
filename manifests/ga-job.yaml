@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ga-optimizer
+  namespace: default
+spec:
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: ga-agent
+      containers:
+      - name: ga-optimizer
+        image: ga-optimizer:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: results
+          mountPath: /results
+        command: ["python", "-u", "scripts/run_ga.py"]
+        env:
+        - name: PROMETHEUS_URL
+          value: "http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+        - name: K8S_DEPLOYMENT_NAME
+          value: "app-ga"
+        - name: K8S_NAMESPACE
+          value: "default"
+        - name: K8S_CONTAINER_NAME
+          value: "app-ga"
+        - name: K8S_ROLLOUT_TIMEOUT
+          value: "300"
+        - name: APP_URL
+          value: "http://app-ga.default.svc.cluster.local:8080"
+        - name: APP_LABEL
+          value: "app-ga"
+        - name: GA_POPULATION
+          value: "5"
+        - name: GA_GENERATIONS
+          value: "5"
+        - name: GA_MUTATION_RATE
+          value: "0.1"
+        - name: GA_CROSSOVER_RATE
+          value: "0.8"
+        - name: GA_ELITISM_COUNT
+          value: "1"
+        - name: GA_TOURNAMENT_SIZE
+          value: "2"
+        - name: GA_STABILIZATION_SECONDS
+          value: "30"
+        - name: GA_REPLICAS_MIN
+          value: "1"
+        - name: GA_REPLICAS_MAX
+          value: "6"
+        - name: GA_CPU_MIN
+          value: "0.1"
+        - name: GA_CPU_MAX
+          value: "3.0"
+        - name: GA_MEMORY_MIN
+          value: "128"
+        - name: GA_MEMORY_MAX
+          value: "6000"
+      volumes:
+      - name: results
+        persistentVolumeClaim:
+          claimName: ga-results-pvc

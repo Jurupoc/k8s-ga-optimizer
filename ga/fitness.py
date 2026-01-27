@@ -236,26 +236,22 @@ class FitnessEvaluator:
             # 4. Coleta métricas do Prometheus
             cpu_usage = self.prometheus.get_cpu_usage(self.app_config.label, minutes=1)
             memory_usage = self.prometheus.get_memory_usage(self.app_config.label)
-            request_rate = self.prometheus.get_request_rate(self.app_config.label, minutes=1)
-            p95_latency = self.prometheus.get_request_latency(self.app_config.label, quantile=0.95, minutes=1)
-            p99_latency = self.prometheus.get_request_latency(self.app_config.label, quantile=0.99, minutes=1)
-            error_rate = self.prometheus.get_error_rate(self.app_config.label, minutes=1)
 
             # 5. Constrói métricas
             metrics = FitnessMetrics(
                 throughput=load_result.throughput,
                 avg_latency=load_result.avg_latency,
-                p95_latency=p95_latency if p95_latency > 0 else load_result.p95_latency,
-                p99_latency=p99_latency if p99_latency > 0 else load_result.p99_latency,
+                p95_latency=load_result.p95_latency,
+                p99_latency=load_result.p99_latency,
+                request_rate=load_result.throughput,
+                error_rate=load_result.fail / load_result.total,
                 success_rate=load_result.success_rate,
                 total_requests=load_result.total,
                 failed_requests=load_result.fail,
                 cpu_usage=cpu_usage,
                 memory_usage=memory_usage,
                 cpu_utilization=safe_divide(cpu_usage, individual.cpu_limit),
-                memory_utilization=safe_divide(memory_usage / (1024 * 1024), individual.memory_limit),
-                request_rate=request_rate,
-                error_rate=error_rate
+                memory_utilization=safe_divide(memory_usage / (1024 * 1024), individual.memory_limit)
             )
 
             # 6. Calcula fitness

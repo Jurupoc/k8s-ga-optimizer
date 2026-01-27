@@ -5,52 +5,56 @@ Script principal para executar o algoritmo genético.
 import sys
 from pathlib import Path
 
-# Adiciona o diretório raiz do projeto ao PYTHONPATH
-# Isso permite que os imports funcionem independente de onde o script é executado
-script_dir = Path(__file__).parent
-project_root = script_dir.parent
-sys.path.insert(0, str(project_root))
-
 import argparse
 import json
 from datetime import datetime
 
 from ga.optimizer import GeneticOptimizer
-from ga.config import GAParameters, AppConfig
+from ga.config import GAParameters, AppConfig, PrometheusConfig
+from integrations.prometheus_client import PrometheusClient
 from shared.utils import log
+
+
+def check_prometheus_connection() -> bool:
+    """
+    Verifica se é possível conectar ao Prometheus.
+    
+    Returns:
+        True se conectou com sucesso, False caso contrário
+    """
+    try:
+        log("Checking Prometheus connection...")
+        config = PrometheusConfig.from_env()
+        client = PrometheusClient(config)
+        # Tenta obter o cliente (isso força a conexão)
+        client._get_client()
+        log("✅ Prometheus connection successful")
+        return True
+    except Exception as e:
+        log(f"❌ Failed to connect to Prometheus: {e}", level="error")
+        log("Exiting early - Prometheus connection is required for GA optimization", level="error")
+        return False
 
 
 def main():
     """Função principal."""
     parser = argparse.ArgumentParser(description="Run Genetic Algorithm Optimizer")
-    parser.add_argument("--config", help="JSON config file")
-    parser.add_argument("--output", default="ga_results.json", help="Output file for results")
-    parser.add_argument("--parallel", action="store_true", help="Enable parallel evaluations")
-    parser.add_argument("--workers", type=int, default=2, help="Number of parallel workers")
+    parser.add_argument("--output", default="results/ga_results.json", help="Output file for results")
 
     args = parser.parse_args()
+
+    # Verifica conexão com Prometheus antes de continuar
+    if not check_prometheus_connection():
+        sys.exit(1)
 
     # Carrega configuração
     params = GAParameters.from_env()
     app_config = AppConfig.from_env()
 
-    if args.config:
-        with open(args.config, 'r') as f:
-            config_data = json.load(f)
-            # Atualiza params se especificado
-            if "ga" in config_data:
-                ga_data = config_data["ga"]
-                params.population_size = ga_data.get("population_size", params.population_size)
-                params.generations = ga_data.get("generations", params.generations)
-                params.mutation_rate = ga_data.get("mutation_rate", params.mutation_rate)
-                # ... outros parâmetros
-
     # Cria otimizador
     optimizer = GeneticOptimizer(
         params=params,
-        app_config=app_config,
-        parallel_evaluations=args.parallel,
-        max_workers=args.workers
+        app_config=app_config
     )
 
     # Executa
@@ -90,5 +94,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

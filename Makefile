@@ -13,6 +13,7 @@ LOADTEST_DURATION = 60
 LOADTEST_CONCURRENCY = 20
 GA_OUTPUT = ga_results.json
 GA_CONFIG = ga_config.json
+GA_MANIFEST = manifests/ga-job.yaml
 
 # Python e ambiente
 PYTHON = python
@@ -73,32 +74,29 @@ run-load-test:
 # =====================================================
 # Algoritmo Genético
 # =====================================================
-.PHONY: run-ga
-run-ga:
-	$(PYTHON) scripts/run_ga.py --output $(GA_OUTPUT)
-
-.PHONY: run-ga-parallel
-run-ga-parallel:
-	$(PYTHON) scripts/run_ga.py --output $(GA_OUTPUT) --parallel --workers 2
-
-.PHONY: run-ga-config
-run-ga-config:
-	$(PYTHON) scripts/run_ga.py --config $(GA_CONFIG) --output $(GA_OUTPUT)
-
-.PHONY: run-ga-legacy
-run-ga-legacy:
-	$(PYTHON) ga/optimizer.py
 
 .PHONY: build-ga
 build-ga:
 	minikube image build -f dockerfile.ga -t $(GA_IMAGE) .
 
-.PHONY: run-ga-k8s
-run-ga-k8s:
-	kubectl run -it --rm ga-optimizer \
-		--image=$(GA_IMAGE) \
-		--restart=Never \
-		--env-file .env || true
+.PHONY: run-ga
+run-ga:
+	kubectl apply -f $(GA_MANIFEST)
+
+.PHONY: delete-ga
+delete-ga:
+	kubectl delete job $(GA_APP_NAME)
+
+.PHONY: logs-ga
+logs-ga:
+	kubectl logs -f job/$(GA_APP_NAME)
+
+.PHONY: ga
+ga:
+	minikube image build -f dockerfile.ga -t $(GA_IMAGE) .
+	kubectl delete job $(GA_APP_NAME)
+	kubectl apply -f $(GA_MANIFEST)
+	kubectl get pods -w
 
 # =====================================================
 # Exportação de Dados
@@ -125,17 +123,13 @@ export-all: export-csv export-parquet export-json
 logs-api:
 	kubectl logs -f deployment/$(APP_NAME) -n $(NAMESPACE)
 
-.PHONY: logs-ga
-logs-ga:
-	kubectl logs -f job/ga-optimizer -n $(NAMESPACE) || kubectl logs -f pod/ga-optimizer -n $(NAMESPACE)
-
 .PHONY: port-forward
 port-forward:
 	kubectl port-forward svc/$(APP_NAME) 8080:8080 -n $(NAMESPACE)
 
 .PHONY: port-forward-prometheus
 port-forward-prometheus:
-	kubectl port-forward svc/prometheus-kube-prometheus-prometheus 9090:9090 -n $(MONITOR_NAMESPACE)
+	kubectl port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090 -n $(MONITOR_NAMESPACE)
 
 .PHONY: status
 status:
@@ -194,7 +188,7 @@ clean: clean-cache clean-results
 	docker rmi -f $(LOADTEST_IMAGE) || true
 	docker rmi -f $(GA_IMAGE) || true
 	kubectl delete pod -l app=loadtest -n $(NAMESPACE) || true
-	kubectl delete pod -l app=ga-optimizer -n $(NAMESPACE) || true
+	kubectl delete job ga-optimizer -n $(NAMESPACE) || true
 
 .PHONY: clean-all
 clean-all: clean
@@ -224,12 +218,8 @@ help:
 	@echo "  make run-load-test-local - Executa load test localmente"
 	@echo ""
 	@echo "Algoritmo Genetico:"
-	@echo "  make run-ga            - Executa GA (sequencial)"
-	@echo "  make run-ga-parallel   - Executa GA com paralelizacao"
-	@echo "  make run-ga-config     - Executa GA com arquivo de config"
-	@echo "  make run-ga-legacy     - Executa GA via modulo antigo"
 	@echo "  make build-ga          - Build da imagem Docker do GA"
-	@echo "  make run-ga-k8s        - Executa GA no cluster"
+	@echo "  make logs-ga           - Logs do job GA (apos aplicar manifest)"
 	@echo ""
 	@echo "Exportacao:"
 	@echo "  make export-csv        - Exporta resultados para CSV"
@@ -239,7 +229,7 @@ help:
 	@echo ""
 	@echo "Monitoramento:"
 	@echo "  make logs-api                - Logs da API"
-	@echo "  make logs-ga                 - Logs do GA"
+	@echo "  make logs-ga                 - Logs do job GA"
 	@echo "  make port-forward            - Port forward da API (8080)"
 	@echo "  make port-forward-prometheus - Port forward do Prometheus (9090)"
 	@echo "  make status                  - Status dos recursos"

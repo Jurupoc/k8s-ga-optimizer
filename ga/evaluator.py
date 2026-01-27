@@ -16,15 +16,10 @@ from typing import Dict, Optional
 from .utils import log
 from .tests.load_test import run_load_test
 from .k8s_manager import wait_for_rollout
-from .prometheus_utils import (
-    get_prom_connection,
-    get_avg_cpu_usage,
-    get_avg_memory_usage,
-    get_request_rate,
-)
+from integrations.prometheus_client import PrometheusClient
+from ga.config import PrometheusConfig
 
-
-PROMETHEUS_URL = os.environ.get("PROM_URL", "http://localhost:9090")
+PROMETHEUS_URL = os.environ.get("PROMETHEUS_URL", "http://localhost:9090")
 PROM_QUERY_TIMEOUT = int(os.environ.get("PROM_QUERY_TIMEOUT", "10"))
 LOAD_TEST_DURATION = int(os.environ.get("LOAD_TEST_DURATION", "30"))
 LOAD_TEST_CONCURRENCY = int(os.environ.get("LOAD_TEST_CONCURRENCY", "20"))
@@ -32,33 +27,10 @@ APP_URL = os.environ.get("APP_URL", "http://app-ga.default.svc.cluster.local:808
 APP_LABEL = os.environ.get("APP_LABEL", "app-ga")
 
 
-def prom_query(query: str) -> Optional[list]:
-    """
-    Executa uma query no Prometheus e retorna os resultados.
-    """
-    try:
-        r = requests.get(
-            f"{PROMETHEUS_URL}/api/v1/query",
-            params={"query": query},
-            timeout=PROM_QUERY_TIMEOUT
-        )
-        r.raise_for_status()
-        data = r.json()
-        if data.get("status") != "success":
-            log("Prometheus returned non-success:", data, level="warning")
-            return None
-        result = data.get("data", {}).get("result", [])
-        return result
-    except Exception as e:
-        log("Prometheus query error:", e, level="error")
-        return None
-
-
 def calculate_fitness(
     load_metrics: Dict,
     cpu_usage: float,
     memory_usage: float,
-    request_rate: float,
     config: Dict
 ) -> float:
     """
@@ -146,22 +118,23 @@ def evaluate_individual(config: Dict, skip_load_test: bool = False) -> float:
             log("Skipped load test, using default metrics", level="warning")
 
         # 3. Consultar Prometheus para métricas de recursos
-        prom = get_prom_connection()
+        prom_client = PrometheusClient(PrometheusConfig.from_env())
 
-        cpu_usage = get_avg_cpu_usage(prom, APP_LABEL, minutes=1)
-        memory_usage = get_avg_memory_usage(prom, APP_LABEL)
-        request_rate = get_request_rate(prom, APP_LABEL, minutes=1)
+        # Usa queries com namespace e container filter para compatibilidade
+        cpu_query = f'avg(rate(container_cpu_usage_seconds_total{{namespace="default", pod=~"{APP_LABEL}.*", container!="POD"}}[1m]))'
+        memory_query = f'avg(container_memory_working_set_bytes{{namespace="default", pod=~"{APP_LABEL}.*", container!="POD"}})'
+
+        cpu_usage = prom_client.query_instant(cpu_query)
+        memory_usage = prom_client.query_instant(memory_query)
 
         log(f"Prometheus metrics: CPU={cpu_usage:.4f}, "
-            f"Memory={memory_usage:.2f} bytes, "
-            f"RequestRate={request_rate:.4f}")
+            f"Memory={memory_usage:.2f} bytes")
 
         # 4. Calcular fitness
         score = calculate_fitness(
             load_metrics,
             cpu_usage,
             memory_usage,
-            request_rate,
             config
         )
 

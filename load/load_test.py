@@ -156,7 +156,6 @@ class LoadTester:
 
                     with lock:
                         if response.status_code == 200:
-                            log(f"Request status_code 200: {response.status_code} - {response.text}", level="debug")
                             success_count += 1
                             worker_latencies.append(latency)
                         else:

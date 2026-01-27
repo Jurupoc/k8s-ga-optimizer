@@ -4,10 +4,9 @@ Cliente robusto para integração com Prometheus.
 Inclui retries, timeouts, cache e tolerância a falhas.
 """
 import time
-import functools
-from typing import Optional, Dict, List, Any
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
 from prometheus_api_client import PrometheusConnect
-from prometheus_api_client.exceptions import PrometheusApiClientException
 
 from ga.exceptions import PrometheusError
 from ga.config import PrometheusConfig
@@ -40,7 +39,19 @@ class PrometheusClient:
                     disable_ssl=True
                 )
                 # Testa conexão
-                self._client.get_metric_range_data("up", start_time="1m", end_time="now")
+                end_time = datetime.now()
+                start_time = end_time - timedelta(minutes=1)
+                self._client.get_metric_range_data("up", start_time=start_time, end_time=end_time)
+
+                # Testa query
+                query = 'avg(rate(container_cpu_usage_seconds_total{namespace="default", pod=~"app-ga.*", container!="POD"}[1m]))'
+                result = self._client.custom_query(query=query)
+                log(f"Query: {query}", level="debug")
+                log(f"Result: {result}", level="debug")
+                if not result or len(result) == 0:
+                    raise PrometheusError("Query returned no results")
+                if "value" not in result[0] or result[0]["value"] is None or result[0]["value"][1] is None:
+                    raise PrometheusError("Query returned no value")
                 log(f"Prometheus connection established: {self.config.url}")
             except Exception as e:
                 log(f"Failed to connect to Prometheus: {e}", level="error")
@@ -124,75 +135,22 @@ class PrometheusClient:
                     return float(value)
                 elif isinstance(result[0].get("value"), list):
                     return float(result[0]["value"][1])
-            log(f"Query returned no results: {query[:50]}...", level="warning")
+            log(f"Query returned no results.\nQUERY: {query}\nRESULT: {result}", level="warning")
             return default
         except PrometheusError:
             raise
         except Exception as e:
-            log(f"Query failed: {query[:50]}... | Error: {e}", level="warning")
+            log(f"Query failed: {query}... | Error: {e}", level="warning")
             return default
-
-    def query_range(
-        self,
-        query: str,
-        start_time: str = "5m",
-        end_time: str = "now",
-        step: str = "15s"
-    ) -> Optional[List[Dict[str, Any]]]:
-        """
-        Executa uma query de range.
-
-        Args:
-            query: Query PromQL
-            start_time: Tempo inicial
-            end_time: Tempo final
-            step: Intervalo de amostragem
-
-        Returns:
-            Lista de resultados ou None
-        """
-        try:
-            def _execute():
-                client = self._get_client()
-                return client.get_metric_range_data(
-                    metric_name=query,
-                    start_time=start_time,
-                    end_time=end_time,
-                    step=step
-                )
-            return self._retry_query(_execute)
-        except Exception as e:
-            log(f"Range query failed: {query[:50]}... | Error: {e}", level="warning")
-            return None
 
     def get_cpu_usage(self, app_label: str, minutes: int = 1) -> float:
         """Retorna uso médio de CPU em núcleos."""
-        query = f'avg(rate(container_cpu_usage_seconds_total{{pod=~"{app_label}.*"}}[{minutes}m]))'
+        query = f'avg(rate(container_cpu_usage_seconds_total{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{minutes}m]))'
         return self.query_instant(query)
 
     def get_memory_usage(self, app_label: str) -> float:
         """Retorna uso médio de memória em bytes."""
-        query = f'avg(container_memory_usage_bytes{{pod=~"{app_label}.*"}})'
-        return self.query_instant(query)
-
-    def get_request_rate(self, app_label: str, minutes: int = 1) -> float:
-        """Retorna taxa de requisições por segundo."""
-        query = f'rate(app_requests_total{{job="{app_label}"}}[{minutes}m])'
-        return self.query_instant(query)
-
-    def get_request_latency(self, app_label: str, quantile: float = 0.5, minutes: int = 1) -> float:
-        """Retorna latência de requisições (percentil)."""
-        query = f'histogram_quantile({quantile}, rate(app_request_latency_seconds_bucket{{job="{app_label}"}}[{minutes}m]))'
-        return self.query_instant(query)
-
-    def get_error_rate(self, app_label: str, minutes: int = 1) -> float:
-        """Retorna taxa de erros por segundo."""
-        query = f'rate(app_requests_total{{job="{app_label}", status_code!="200"}}[{minutes}m])'
-        return self.query_instant(query)
-
-    def get_pod_count(self, app_label: str) -> float:
-        """Retorna número de pods."""
-        query = f'count(container_memory_usage_bytes{{pod=~"{app_label}.*"}})'
+        query = f'avg(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}})'
         return self.query_instant(query)
 
     def clear_cache(self):

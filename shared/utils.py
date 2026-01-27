@@ -18,6 +18,10 @@ logging.basicConfig(
 logger = logging.getLogger("app")
 logger.setLevel(LOG_LEVEL)
 
+# Silencia logs DEBUG do cliente Kubernetes
+logging.getLogger("kubernetes.client.rest").setLevel(logging.WARNING)
+logging.getLogger("kubernetes").setLevel(logging.WARNING)
+
 
 def log(*args, level: str = "info") -> None:
     """

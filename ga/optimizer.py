@@ -3,10 +3,7 @@
 Executor principal do Algoritmo Genético refatorado.
 Usa módulos modulares: population, fitness, cache, etc.
 """
-import time
-import concurrent.futures
-from typing import List, Optional, Dict, Any
-from datetime import datetime
+from typing import List, Optional
 
 from ga.types import Individual, GenerationStats, EvaluationResult
 from ga.config import GAParameters, AppConfig
@@ -16,7 +13,6 @@ from ga.cache import EvaluationCache
 from integrations.prometheus_client import PrometheusClient
 from integrations.k8s_client import KubernetesClient
 from load.load_test import LoadTester
-from load.config import LoadTestConfig
 from shared.utils import log
 from ga.exceptions import GAException
 
@@ -29,9 +25,7 @@ class GeneticOptimizer:
     def __init__(
         self,
         params: Optional[GAParameters] = None,
-        app_config: Optional[AppConfig] = None,
-        parallel_evaluations: bool = False,
-        max_workers: int = 2
+        app_config: Optional[AppConfig] = None
     ):
         """
         Inicializa o otimizador.
@@ -39,13 +33,9 @@ class GeneticOptimizer:
         Args:
             params: Parâmetros do GA
             app_config: Configuração da aplicação
-            parallel_evaluations: Se True, avalia em paralelo
-            max_workers: Número máximo de workers paralelos
         """
         self.params = params or GAParameters.from_env()
         self.app_config = app_config or AppConfig.from_env()
-        self.parallel_evaluations = parallel_evaluations
-        self.max_workers = max_workers
 
         # Inicializa componentes
         self.pop_manager = PopulationManager(self.params)
@@ -124,43 +114,14 @@ class GeneticOptimizer:
         Returns:
             Lista de resultados
         """
-        if self.parallel_evaluations and len(population.individuals) > 1:
-            # Avaliação paralela (limitada para evitar sobrecarga do cluster)
-            log(f"Evaluating {len(population.individuals)} individuals in parallel (max {self.max_workers} workers)")
+        # Avaliação sequencial
+        results = []
+        for idx, individual in enumerate(population.individuals):
+            log(f"Evaluating individual {idx+1}/{len(population.individuals)}: {individual}")
+            result = self._evaluate_individual(individual)
+            results.append(result)
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                futures = {
-                    executor.submit(self._evaluate_individual, ind): ind
-                    for ind in population.individuals
-                }
-
-                results = []
-                for future in concurrent.futures.as_completed(futures):
-                    try:
-                        result = future.result()
-                        results.append(result)
-                    except Exception as e:
-                        ind = futures[future]
-                        log(f"Parallel evaluation failed for {ind}: {e}", level="error")
-                        results.append(EvaluationResult(
-                            individual=ind,
-                            fitness=0.0,
-                            metrics=None,
-                            error=str(e)
-                        ))
-
-            # Ordena resultados na mesma ordem dos indivíduos
-            result_map = {r.individual: r for r in results}
-            return [result_map[ind] for ind in population.individuals]
-        else:
-            # Avaliação sequencial
-            results = []
-            for idx, individual in enumerate(population.individuals):
-                log(f"Evaluating individual {idx+1}/{len(population.individuals)}: {individual}")
-                result = self._evaluate_individual(individual)
-                results.append(result)
-
-            return results
+        return results
 
     def _calculate_generation_stats(
         self,
@@ -225,7 +186,6 @@ class GeneticOptimizer:
         log(f"Mutation rate: {self.params.mutation_rate}")
         log(f"Crossover rate: {self.params.crossover_rate}")
         log(f"Elitism: {self.params.elitism_count}")
-        log(f"Parallel evaluations: {self.parallel_evaluations}")
         log("=" * 80)
 
         # Cria população inicial
@@ -259,7 +219,7 @@ class GeneticOptimizer:
                 log(f"✨ New global best: {best_individual} (fitness: {best_fitness:.4f})")
 
             # Log estatísticas
-            log(f"\nGeneration {stats.generation} statistics:")
+            log(f"Generation {stats.generation} statistics:")
             log(f"  Average fitness: {stats.avg_fitness:.4f}")
             log(f"  Max fitness: {stats.max_fitness:.4f}")
             log(f"  Min fitness: {stats.min_fitness:.4f}")
