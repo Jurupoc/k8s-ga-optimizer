@@ -8,6 +8,7 @@ from pathlib import Path
 import argparse
 import json
 from datetime import datetime
+from typing import Optional
 
 from ga.optimizer import GeneticOptimizer
 from ga.config import GAParameters, AppConfig, PrometheusConfig
@@ -15,37 +16,12 @@ from integrations.prometheus_client import PrometheusClient
 from shared.utils import log
 
 
-def check_prometheus_connection() -> bool:
-    """
-    Verifica se é possível conectar ao Prometheus.
-    
-    Returns:
-        True se conectou com sucesso, False caso contrário
-    """
-    try:
-        log("Checking Prometheus connection...")
-        config = PrometheusConfig.from_env()
-        client = PrometheusClient(config)
-        # Tenta obter o cliente (isso força a conexão)
-        client._get_client()
-        log("✅ Prometheus connection successful")
-        return True
-    except Exception as e:
-        log(f"❌ Failed to connect to Prometheus: {e}", level="error")
-        log("Exiting early - Prometheus connection is required for GA optimization", level="error")
-        return False
-
-
 def main():
     """Função principal."""
     parser = argparse.ArgumentParser(description="Run Genetic Algorithm Optimizer")
     parser.add_argument("--output", default="results/ga_results.json", help="Output file for results")
 
-    args = parser.parse_args()
-
-    # Verifica conexão com Prometheus antes de continuar
-    if not check_prometheus_connection():
-        sys.exit(1)
+    args = parser.parse_args()  
 
     # Carrega configuração
     params = GAParameters.from_env()

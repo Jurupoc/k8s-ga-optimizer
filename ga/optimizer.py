@@ -226,6 +226,12 @@ class GeneticOptimizer:
             log(f"  Diversity: {stats.diversity:.4f}")
             log(f"  Convergence: {stats.convergence:.4f}")
             log(f"  Best individual: {stats.best_individual}")
+            
+            # Log detalhado de cada indivíduo com fitness
+            log(f"\nPopulation details (Generation {stats.generation}):")
+            for idx, individual in enumerate(population.individuals):
+                fitness = fitness_scores[idx] if idx < len(fitness_scores) else 0.0
+                log(f"  Individual {idx + 1}: REPLICAS={individual.replicas}, CPU={individual.cpu_limit}, MEMORY={individual.memory_limit} → fitness={fitness:.4f}")
 
             # Evolui para próxima geração
             if gen < self.params.generations - 1:  # Não evolui na última geração

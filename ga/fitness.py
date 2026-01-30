@@ -222,6 +222,10 @@ class FitnessEvaluator:
             # 1. Aplica configuração no cluster
             self.k8s.apply_configuration(individual, save_for_rollback=True)
 
+            # 1.5. Pequena pausa para garantir que o Kubernetes registrou as mudanças
+            log("Waiting for Kubernetes to register configuration changes...", level="debug")
+            time.sleep(3)
+
             # 2. Aguarda rollout
             rollout_success = self.k8s.wait_for_rollout()
             if not rollout_success:
@@ -234,8 +238,11 @@ class FitnessEvaluator:
             load_result = self.load_tester.run(load_test_url)
 
             # 4. Coleta métricas do Prometheus
-            cpu_usage = self.prometheus.get_cpu_usage(self.app_config.label, minutes=1)
-            memory_usage = self.prometheus.get_memory_usage(self.app_config.label)
+            log(f"Collecting metrics from Prometheus for {self.app_config.label}", level="debug")
+            cpu_usage = self.prometheus.get_cpu_usage(self.app_config.label, segundos=30)
+            memory_usage = self.prometheus.get_memory_usage(self.app_config.label, segundos=30)
+
+            log(f"Metrics collected: CPU={cpu_usage}, MEMORY={memory_usage}", level="debug")
 
             # 5. Constrói métricas
             metrics = FitnessMetrics(
@@ -266,4 +273,3 @@ class FitnessEvaluator:
             log(f"Evaluation failed: {e}", level="error")
             metrics = FitnessMetrics()
             return 0.0, metrics
-

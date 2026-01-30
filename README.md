@@ -75,6 +75,31 @@ k8s-ga-optimizer/
 ├── Makefile                 # Comandos para build, deploy e teste
 └── README.md                # Documentação do projeto
 
+## Configuração de Timeout do Kubernetes
+
+O projeto inclui proteção contra timeouts do etcd/API do Kubernetes através de:
+
+- **Retry automático** com backoff exponencial para erros 500/429/503
+- **Timeouts configuráveis** para todas as operações da API
+- **Logs detalhados** de tentativas e erros
+
+### Variáveis de Ambiente
+
+```bash
+K8S_API_TIMEOUT=120        # Timeout para operações da API (segundos)
+K8S_MAX_RETRIES=5          # Número máximo de tentativas
+K8S_RETRY_DELAY=10         # Delay base entre tentativas (segundos)
+```
+
+### Documentação Relacionada
+
+- 📖 [K8S_TIMEOUT_CONFIG.md](K8S_TIMEOUT_CONFIG.md) - Configuração detalhada
+- 🔧 [TROUBLESHOOTING_TIMEOUT.md](TROUBLESHOOTING_TIMEOUT.md) - Guia de troubleshooting
+- 📝 [TIMEOUT_FIX_SUMMARY.md](TIMEOUT_FIX_SUMMARY.md) - Resumo das correções implementadas
+- 🗑️ [PENDING_PODS_CLEANUP.md](PENDING_PODS_CLEANUP.md) - Justificativa técnica da limpeza de pods
+- 🔄 [ROLLOUT_CLEANUP_FEATURE.md](ROLLOUT_CLEANUP_FEATURE.md) - Limpeza durante rollout
+- 🔌 [PROMETHEUS_CLIENT_FIX.md](PROMETHEUS_CLIENT_FIX.md) - Correção do PrometheusClient
+
 ## Makefile
 
 O projeto inclui um Makefile completo que facilita todo o fluxo de desenvolvimento e testes, evitando a necessidade de digitar longos comandos kubectl ou docker. Ele centraliza operações de:

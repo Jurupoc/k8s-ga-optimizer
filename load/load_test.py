@@ -146,7 +146,6 @@ class LoadTester:
             nonlocal success_count, fail_count
             worker_latencies = []
 
-            log(f"Worker {worker_id} started", level="debug")
             while time.time() < end_time:
                 # Executa requisição
                 req_start = time.time()
@@ -169,7 +168,7 @@ class LoadTester:
                 except Exception as e:
                     with lock:
                         fail_count += 1
-                    log(f"Request failed in worker {worker_id}: {e}", level="info")
+                    log(f"Request failed in worker {worker_id}: {e}", level="debug")
 
                 # Pequeno delay para evitar sobrecarga
                 time.sleep(0.01)

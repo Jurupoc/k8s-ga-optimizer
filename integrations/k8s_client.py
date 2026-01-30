@@ -5,6 +5,7 @@ Inclui validação, rollback automático, dry-run e espera confiável de rollout
 """
 import os
 import time
+from functools import wraps
 from typing import Dict, Optional
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
@@ -13,6 +14,50 @@ from ga.exceptions import KubernetesError, ConfigurationError
 from ga.config import AppConfig
 from ga.types import Individual
 from shared.utils import log
+
+
+def retry_on_timeout(max_retries: int = 3, delay: int = 5, cleanup_pods: bool = True):
+    """
+    Decorator para retry automático em caso de timeout ou erro 500.
+
+    Args:
+        max_retries: Número máximo de tentativas
+        delay: Delay base entre tentativas (segundos)
+        cleanup_pods: Se True, remove pods Pending antes de retentar
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            last_exception = None
+            for attempt in range(max_retries):
+                try:
+                    return func(self, *args, **kwargs)
+                except ApiException as e:
+                    last_exception = e
+                    # Retry apenas em erros de timeout (500) ou rate limiting (429)
+                    if e.status in (500, 429, 503):
+                        if attempt < max_retries - 1:
+                            wait_time = delay * (2 ** attempt)  # Backoff exponencial
+                            log(f"⚠️ API error {e.status}, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})", level="warning")
+
+                            # Limpa pods Pending antes de retentar
+                            if cleanup_pods and hasattr(self, '_cleanup_pending_pods'):
+                                try:
+                                    self._cleanup_pending_pods()
+                                except Exception as cleanup_error:
+                                    log(f"Cleanup error (non-fatal): {cleanup_error}", level="warning")
+
+                            time.sleep(wait_time)
+                            continue
+                    # Para outros erros, não tenta novamente
+                    raise
+                except Exception as e:
+                    # Outros erros não devem ser retentados
+                    raise
+            # Se todas as tentativas falharam
+            raise last_exception
+        return wrapper
+    return decorator
 
 
 class KubernetesClient:
@@ -30,11 +75,16 @@ class KubernetesClient:
         self.config = app_config or AppConfig.from_env()
         self.dry_run = os.environ.get("GA_DRY_RUN", "false").lower() in ("1", "true", "yes")
         self.rollout_timeout = int(os.environ.get("K8S_ROLLOUT_TIMEOUT", "120"))
+        self.api_timeout = int(os.environ.get("K8S_API_TIMEOUT", "120"))  # Timeout para operações da API
+        self.max_retries = int(os.environ.get("K8S_MAX_RETRIES", "3"))  # Número de tentativas
+        self.retry_delay = int(os.environ.get("K8S_RETRY_DELAY", "5"))  # Delay entre tentativas (segundos)
+        self.cleanup_pending_pods = os.environ.get("K8S_CLEANUP_PENDING_PODS", "true").lower() in ("1", "true", "yes")
+        self.cleanup_threshold = int(os.environ.get("K8S_CLEANUP_THRESHOLD", "10"))  # Iterações sem progresso antes de limpar
         self._api: Optional[client.AppsV1Api] = None
         self._last_config: Optional[Individual] = None  # Para rollback
 
     def _get_api(self) -> client.AppsV1Api:
-        """Obtém ou cria a API do Kubernetes."""
+        """Obtém ou cria a API do Kubernetes com configurações de timeout."""
         if self._api is None:
             try:
                 config.load_kube_config()
@@ -47,8 +97,69 @@ class KubernetesClient:
                     log(f"Could not load kube config: {e}", level="error")
                     raise KubernetesError(f"Failed to load Kubernetes config: {e}") from e
 
-            self._api = client.AppsV1Api()
+            # Configura timeout na API client
+            api_client = client.ApiClient()
+            api_client.rest_client.pool_manager.connection_pool_kw['timeout'] = self.api_timeout
+            self._api = client.AppsV1Api(api_client)
+            log(f"Kubernetes API configured with timeout={self.api_timeout}s")
         return self._api
+
+    def _get_core_api(self) -> client.CoreV1Api:
+        """Obtém API Core V1 para operações com pods."""
+        api_client = client.ApiClient()
+        api_client.rest_client.pool_manager.connection_pool_kw['timeout'] = self.api_timeout
+        return client.CoreV1Api(api_client)
+
+    def _cleanup_pending_pods(self) -> int:
+        """
+        Remove pods em estado Pending que podem estar travados.
+
+        Returns:
+            Número de pods deletados
+        """
+        try:
+            core_api = self._get_core_api()
+
+            # Lista pods do deployment
+            label_selector = f"app={self.config.deployment_name}"
+            pods = core_api.list_namespaced_pod(
+                namespace=self.config.namespace,
+                label_selector=label_selector,
+                _request_timeout=self.api_timeout
+            )
+
+            deleted_count = 0
+            for pod in pods.items:
+                # Verifica se o pod está em Pending por muito tempo
+                if pod.status.phase == "Pending":
+                    pod_name = pod.metadata.name
+
+                    # Verifica há quanto tempo está Pending
+                    creation_time = pod.metadata.creation_timestamp
+                    age_seconds = (time.time() - creation_time.timestamp()) if creation_time else 0
+
+                    # Deleta pods Pending por mais de 30 segundos
+                    if age_seconds > 30:
+                        log(f"🗑️ Deleting stuck Pending pod: {pod_name} (age: {int(age_seconds)}s)")
+                        try:
+                            core_api.delete_namespaced_pod(
+                                name=pod_name,
+                                namespace=self.config.namespace,
+                                grace_period_seconds=0,  # Força deleção imediata
+                                _request_timeout=self.api_timeout
+                            )
+                            deleted_count += 1
+                        except ApiException as e:
+                            log(f"Failed to delete pod {pod_name}: {e}", level="warning")
+
+            if deleted_count > 0:
+                log(f"✅ Cleaned up {deleted_count} pending pod(s)")
+
+            return deleted_count
+
+        except Exception as e:
+            log(f"Failed to cleanup pending pods: {e}", level="warning")
+            return 0
 
     def _validate_individual(self, individual: Individual) -> None:
         """
@@ -70,16 +181,68 @@ class KubernetesClient:
             raise ConfigurationError(f"Invalid memory limit: {individual.memory_limit} (must be 64-100000 MB)")
 
     def _get_current_deployment(self) -> Optional[client.V1Deployment]:
-        """Obtém o deployment atual."""
+        """Obtém o deployment atual com timeout."""
         try:
             api = self._get_api()
             return api.read_namespaced_deployment(
                 name=self.config.deployment_name,
-                namespace=self.config.namespace
+                namespace=self.config.namespace,
+                _request_timeout=self.api_timeout
             )
         except ApiException as e:
             log(f"Failed to get current deployment: {e}", level="warning")
             return None
+
+    def _parse_memory_to_mb(self, mem_str: str) -> int:
+        """
+        Converte string de memória Kubernetes para MB.
+        
+        Suporta: Mi, M, Gi, G, Ki, K
+        Exemplos: "256Mi" -> 256, "1Gi" -> 1024, "512M" -> 512
+        
+        Args:
+            mem_str: String de memória (ex: "256Mi", "1Gi")
+            
+        Returns:
+            Memória em MB
+        """
+        mem_str = mem_str.strip()
+        
+        # Mapeamento de unidades para MB
+        if mem_str.endswith("Gi"):
+            return int(float(mem_str.rstrip("Gi")) * 1024)
+        elif mem_str.endswith("G"):
+            return int(float(mem_str.rstrip("G")) * 1000)
+        elif mem_str.endswith("Mi"):
+            return int(mem_str.rstrip("Mi"))
+        elif mem_str.endswith("M"):
+            return int(mem_str.rstrip("M"))
+        elif mem_str.endswith("Ki"):
+            return int(float(mem_str.rstrip("Ki")) / 1024)
+        elif mem_str.endswith("K"):
+            return int(float(mem_str.rstrip("K")) / 1000)
+        else:
+            # Assume bytes, converte para MB
+            return int(float(mem_str) / (1024 * 1024))
+    
+    def _parse_cpu_to_cores(self, cpu_str: str) -> float:
+        """
+        Converte string de CPU Kubernetes para cores.
+        
+        Exemplos: "500m" -> 0.5, "1" -> 1.0, "1.5" -> 1.5
+        
+        Args:
+            cpu_str: String de CPU (ex: "500m", "1")
+            
+        Returns:
+            CPU em cores
+        """
+        cpu_str = cpu_str.strip()
+        
+        if cpu_str.endswith("m"):
+            return float(cpu_str.rstrip("m")) / 1000
+        else:
+            return float(cpu_str)
 
     def _save_current_config(self) -> None:
         """Salva a configuração atual para possível rollback."""
@@ -94,57 +257,57 @@ class KubernetesClient:
                 cpu_str = limits.get("cpu", "0")
                 mem_str = limits.get("memory", "0Mi")
 
-                # Converte CPU (ex: "500m" -> 0.5)
-                cpu_cores = float(cpu_str.rstrip("m")) / 1000 if cpu_str.endswith("m") else float(cpu_str)
+                try:
+                    # Converte CPU e memória usando funções robustas
+                    cpu_cores = self._parse_cpu_to_cores(cpu_str)
+                    mem_mb = self._parse_memory_to_mb(mem_str)
 
-                # Converte memória (ex: "256Mi" -> 256)
-                mem_mb = int(mem_str.rstrip("Mi")) if mem_str.endswith("Mi") else int(mem_str.rstrip("M"))
+                    self._last_config = Individual(
+                        replicas=spec.replicas or 1,
+                        cpu_limit=cpu_cores,
+                        memory_limit=mem_mb,
+                        container_name=container.name
+                    )
+                    log(f"Saved current config for rollback: {self._last_config}")
+                except Exception as e:
+                    log(f"Failed to parse current config (cpu={cpu_str}, mem={mem_str}): {e}", level="error")
 
-                self._last_config = Individual(
-                    replicas=spec.replicas or 1,
-                    cpu_limit=cpu_cores,
-                    memory_limit=mem_mb,
-                    container_name=container.name
-                )
-                log(f"Saved current config for rollback: {self._last_config}")
-
+    @retry_on_timeout(max_retries=3, delay=5, cleanup_pods=True)
     def scale_deployment(self, replicas: int) -> None:
         """
-        Escala o deployment.
+        Escala o deployment com retry automático.
 
         Args:
             replicas: Número de réplicas desejadas
 
         Raises:
-            KubernetesError: Se a operação falhar
+            KubernetesError: Se a operação falhar após todas as tentativas
         """
         replicas = int(replicas)
         log(f"Scaling deployment {self.config.deployment_name} to {replicas} replicas")
-
-        if self.dry_run:
-            log("(dry-run) scale skipped")
-            return
 
         try:
             api = self._get_api()
             api.patch_namespaced_deployment_scale(
                 name=self.config.deployment_name,
                 namespace=self.config.namespace,
-                body={"spec": {"replicas": replicas}}
+                body={"spec": {"replicas": replicas}},
+                _request_timeout=self.api_timeout
             )
             log(f"✅ Deployment scaled to {replicas} replicas")
         except ApiException as e:
             raise KubernetesError(f"Failed to scale deployment: {e}") from e
 
+    @retry_on_timeout(max_retries=3, delay=5, cleanup_pods=True)
     def patch_resources(self, individual: Individual) -> None:
         """
-        Aplica patch de recursos (CPU e memória).
+        Aplica patch de recursos (CPU e memória) com retry automático.
 
         Args:
             individual: Indivíduo com configuração de recursos
 
         Raises:
-            KubernetesError: Se a operação falhar
+            KubernetesError: Se a operação falhar após todas as tentativas
         """
         cpu_m = f"{int(individual.cpu_limit * 1000)}m"
         mem = f"{int(individual.memory_limit)}Mi"
@@ -170,18 +333,14 @@ class KubernetesClient:
 
         log(f"Patching resources for container {container_name}: CPU={cpu_m}, Memory={mem}")
 
-        if self.dry_run:
-            log("(dry-run) patch skipped")
-            return
-
         try:
             api = self._get_api()
             api.patch_namespaced_deployment(
                 name=self.config.deployment_name,
                 namespace=self.config.namespace,
-                body=patch
+                body=patch,
+                _request_timeout=self.api_timeout
             )
-            log(f"✅ Resources patched: CPU={cpu_m}, Memory={mem}")
         except ApiException as e:
             raise KubernetesError(f"Failed to patch resources: {e}") from e
 
@@ -203,10 +362,13 @@ class KubernetesClient:
             self._save_current_config()
 
         try:
+            log(f"📝 Applying configuration: {individual}")
             # Aplica escala primeiro
+            log(f"  → Scaling to {individual.replicas} replicas...", level="debug")
             self.scale_deployment(individual.replicas)
 
-            # Depois aplica recursos
+            # Depois aplica recursos (isso força um novo rollout!)
+            log(f"  → Patching resources (CPU={individual.cpu_limit}, MEM={individual.memory_limit})...", level="debug")
             self.patch_resources(individual)
 
             log(f"✅ Applied configuration: {individual}")
@@ -238,6 +400,8 @@ class KubernetesClient:
         """
         Aguarda rollout completo do deployment.
 
+        Remove automaticamente pods em Pending se não houver progresso.
+
         Args:
             timeout: Timeout em segundos (default: self.rollout_timeout)
 
@@ -249,13 +413,31 @@ class KubernetesClient:
         start_time = time.time()
         check_interval = 5
 
+        # Controle de progresso para detectar pods travados
+        last_ready_count = -1
+        no_progress_iterations = 0
+        cleanup_threshold = self.cleanup_threshold  # Iterações sem progresso antes de limpar
+
+        # Flag para garantir que vimos o rollout em progresso antes de considerar completo
+        saw_rollout_in_progress = False
+
+        # Obtém a generation atual do deployment para verificar se mudanças foram aplicadas
+        initial_deployment = api.read_namespaced_deployment(
+            self.config.deployment_name,
+            self.config.namespace,
+             _request_timeout=self.api_timeout
+        )
+        expected_generation = initial_deployment.metadata.generation
+        log(f"Expected deployment generation: {expected_generation}", level="debug")
+
         log(f"Waiting for rollout of {self.config.deployment_name}...")
 
         while time.time() - start_time < timeout:
             try:
                 resp = api.read_namespaced_deployment_status(
                     self.config.deployment_name,
-                    self.config.namespace
+                    self.config.namespace,
+                    _request_timeout=self.api_timeout
                 )
                 status = resp.status
 
@@ -269,7 +451,33 @@ class KubernetesClient:
                     return True
 
                 elapsed = int(time.time() - start_time)
-                log(f"⏳ Waiting... ({ready}/{desired} ready, {available}/{desired} available) [{elapsed}s/{timeout}s]")
+                log(f"⏳ Waiting... ({ready}/{desired} ready, {available}/{desired} available, {updated}/{desired} updated) [{elapsed}s/{timeout}s]")
+
+                # Detecta falta de progresso
+                if ready == last_ready_count:
+                    no_progress_iterations += 1
+                    log(f"No progress detected ({no_progress_iterations}/{cleanup_threshold} checks)", level="debug")
+                else:
+                    no_progress_iterations = 0  # Reset se houve progresso
+
+                last_ready_count = ready
+
+                # Limpa pods Pending se não houver progresso e cleanup estiver ativado
+                if (no_progress_iterations >= cleanup_threshold and
+                    self.cleanup_pending_pods and
+                    status.unavailable_replicas and
+                    status.unavailable_replicas > 0):
+
+                    log(f"⚠️ No progress after {no_progress_iterations * check_interval}s, cleaning up pending pods...", level="warning")
+                    deleted_count = self._cleanup_pending_pods()
+
+                    if deleted_count > 0:
+                        # Reset contador após limpeza bem-sucedida
+                        no_progress_iterations = 0
+                        # Aguarda um pouco para Kubernetes recriar pods
+                        log("Waiting for Kubernetes to recreate pods...")
+                        time.sleep(check_interval)
+                        continue
 
                 if status.unavailable_replicas and status.unavailable_replicas > 0:
                     log(f"⚠️ {status.unavailable_replicas} pods unavailable", level="warning")
@@ -280,6 +488,12 @@ class KubernetesClient:
             time.sleep(check_interval)
 
         log(f"⚠️ Timeout: rollout did not complete in {timeout}s", level="warning")
+
+        # Última tentativa de limpeza antes de desistir
+        if self.cleanup_pending_pods:
+            log("Final cleanup attempt before timeout...", level="warning")
+            self._cleanup_pending_pods()
+
         return False
 
     def get_deployment_status(self) -> Optional[Dict]:
@@ -293,7 +507,8 @@ class KubernetesClient:
             api = self._get_api()
             resp = api.read_namespaced_deployment_status(
                 self.config.deployment_name,
-                self.config.namespace
+                self.config.namespace,
+                _request_timeout=self.api_timeout
             )
             status = resp.status
 
@@ -307,5 +522,3 @@ class KubernetesClient:
         except Exception as e:
             log(f"Failed to get deployment status: {e}", level="error")
             return None
-
-

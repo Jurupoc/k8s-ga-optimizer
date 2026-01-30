@@ -22,6 +22,12 @@ logger.setLevel(LOG_LEVEL)
 logging.getLogger("kubernetes.client.rest").setLevel(logging.WARNING)
 logging.getLogger("kubernetes").setLevel(logging.WARNING)
 
+# Silencia logs DEBUG do urllib3 (usado pelo Prometheus client)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+logging.getLogger("prometheus_api_client").setLevel(logging.WARNING)
+logging.getLogger("prometheus_api_client.prometheus_connect").setLevel(logging.WARNING)
+
 
 def log(*args, level: str = "info") -> None:
     """
@@ -44,20 +50,6 @@ def log(*args, level: str = "info") -> None:
         logger.info(msg)
 
 
-def format_dict(d: Dict[str, Any], indent: int = 2) -> str:
-    """
-    Formata um dicionário para exibição legível.
-
-    Args:
-        d: Dicionário a ser formatado
-        indent: Nível de indentação
-
-    Returns:
-        String formatada
-    """
-    return json.dumps(d, indent=indent, ensure_ascii=False)
-
-
 def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> float:
     """
     Divisão segura que evita divisão por zero.
@@ -73,52 +65,3 @@ def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> f
     if denominator == 0 or abs(denominator) < 1e-10:
         return default
     return numerator / denominator
-
-
-def clamp(value: float, min_val: float, max_val: float) -> float:
-    """
-    Limita um valor entre min e max.
-
-    Args:
-        value: Valor a ser limitado
-        min_val: Valor mínimo
-        max_val: Valor máximo
-
-    Returns:
-        Valor limitado
-    """
-    return max(min_val, min(max_val, value))
-
-
-def format_duration(seconds: float) -> str:
-    """
-    Formata duração em segundos para string legível.
-
-    Args:
-        seconds: Duração em segundos
-
-    Returns:
-        String formatada (ex: "1h 23m 45s")
-    """
-    if seconds < 60:
-        return f"{seconds:.1f}s"
-    elif seconds < 3600:
-        minutes = int(seconds // 60)
-        secs = int(seconds % 60)
-        return f"{minutes}m {secs}s"
-    else:
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        secs = int(seconds % 60)
-        return f"{hours}h {minutes}m {secs}s"
-
-
-def get_timestamp() -> str:
-    """
-    Retorna timestamp formatado.
-
-    Returns:
-        String com timestamp (YYYY-MM-DD HH:MM:SS)
-    """
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-

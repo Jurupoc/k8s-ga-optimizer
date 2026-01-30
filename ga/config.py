@@ -12,11 +12,10 @@ class GAParameters:
     """Parâmetros do algoritmo genético."""
     population_size: int = 6
     generations: int = 5
-    mutation_rate: float = 0.2
+    mutation_rate: float = 0.3  # Aumentado de 0.2 para 0.3 (30% de chance)
     crossover_rate: float = 0.8
     elitism_count: int = 1
     tournament_size: int = 2
-    stabilization_seconds: int = 30
 
     # Limites dos parâmetros
     replicas_bounds: Tuple[int, int] = (1, 6)
@@ -33,7 +32,6 @@ class GAParameters:
             crossover_rate=float(os.environ.get("GA_CROSSOVER_RATE", "0.8")),
             elitism_count=int(os.environ.get("GA_ELITISM_COUNT", "1")),
             tournament_size=int(os.environ.get("GA_TOURNAMENT_SIZE", "2")),
-            stabilization_seconds=int(os.environ.get("GA_STABILIZATION_SECONDS", "30")),
             replicas_bounds=(
                 int(os.environ.get("GA_REPLICAS_MIN", "1")),
                 int(os.environ.get("GA_REPLICAS_MAX", "6"))
@@ -90,5 +88,3 @@ class PrometheusConfig:
             retry_attempts=int(os.environ.get("PROM_RETRY_ATTEMPTS", "3")),
             retry_delay=float(os.environ.get("PROM_RETRY_DELAY", "1.0"))
         )
-
-

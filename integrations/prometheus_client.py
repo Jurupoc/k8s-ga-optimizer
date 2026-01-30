@@ -43,15 +43,6 @@ class PrometheusClient:
                 start_time = end_time - timedelta(minutes=1)
                 self._client.get_metric_range_data("up", start_time=start_time, end_time=end_time)
 
-                # Testa query
-                query = 'avg(rate(container_cpu_usage_seconds_total{namespace="default", pod=~"app-ga.*", container!="POD"}[1m]))'
-                result = self._client.custom_query(query=query)
-                log(f"Query: {query}", level="debug")
-                log(f"Result: {result}", level="debug")
-                if not result or len(result) == 0:
-                    raise PrometheusError("Query returned no results")
-                if "value" not in result[0] or result[0]["value"] is None or result[0]["value"][1] is None:
-                    raise PrometheusError("Query returned no value")
                 log(f"Prometheus connection established: {self.config.url}")
             except Exception as e:
                 log(f"Failed to connect to Prometheus: {e}", level="error")
@@ -104,8 +95,10 @@ class PrometheusClient:
                 log(f"Using cached result for query: {query[:50]}...", level="debug")
                 return result
 
+        # Garante que o cliente está inicializado
+        client = self._get_client()
+
         def _execute():
-            client = self._get_client()
             return client.custom_query(query=query)
 
         result = self._retry_query(_execute)
@@ -115,7 +108,7 @@ class PrometheusClient:
 
         return result
 
-    def query_instant(self, query: str, default: float = 0.0, use_cache: bool = True) -> float:
+    def query_instant(self, query: str, default: float = 0.0, use_cache: bool = False) -> float:
         """
         Executa uma query instantânea e retorna valor numérico.
 
@@ -143,19 +136,17 @@ class PrometheusClient:
             log(f"Query failed: {query}... | Error: {e}", level="warning")
             return default
 
-    def get_cpu_usage(self, app_label: str, minutes: int = 1) -> float:
+    def get_cpu_usage(self, app_label: str, segundos: int = 30) -> float:
         """Retorna uso médio de CPU em núcleos."""
-        query = f'avg(rate(container_cpu_usage_seconds_total{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{minutes}m]))'
+        query = f'avg(rate(container_cpu_usage_seconds_total{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s]))'
         return self.query_instant(query)
 
-    def get_memory_usage(self, app_label: str) -> float:
+    def get_memory_usage(self, app_label: str, segundos: int = 30) -> float:
         """Retorna uso médio de memória em bytes."""
-        query = f'avg(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}})'
+        query = f'avg_over_time(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s])'
         return self.query_instant(query)
 
     def clear_cache(self):
         """Limpa o cache de queries."""
         self._cache.clear()
         log("Prometheus cache cleared", level="debug")
-
-
