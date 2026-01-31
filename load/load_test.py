@@ -2,6 +2,7 @@
 """
 Sistema de load testing robusto com suporte a perfis de carga.
 """
+
 import time
 import requests
 import concurrent.futures
@@ -18,6 +19,7 @@ from shared.utils import log
 @dataclass
 class LoadTestResult:
     """Resultado de um teste de carga."""
+
     success: int = 0
     fail: int = 0
     total: int = 0
@@ -50,7 +52,7 @@ class LoadTestResult:
             "p99_latency": self.p99_latency,
             "throughput": self.throughput,
             "success_rate": self.success_rate,
-            "duration": self.duration
+            "duration": self.duration,
         }
 
     def _calculate_percentile(self, percentile: float) -> float:
@@ -78,6 +80,32 @@ class LoadTestResult:
         self.total = self.success + self.fail
         self.success_rate = self.success / self.total if self.total > 0 else 0.0
         self.throughput = self.total / self.duration if self.duration > 0 else 0.0
+    
+    def is_valid(self, min_requests: int = 50, max_error_rate: float = 0.8) -> tuple[bool, str]:
+        """
+        Valida se o resultado do load test é confiável.
+        
+        Args:
+            min_requests: Número mínimo de requisições
+            max_error_rate: Taxa máxima de erro aceitável (0.0 - 1.0)
+        
+        Returns:
+            Tupla (is_valid, reason)
+        """
+        # Verifica se houve requisições suficientes
+        if self.total < min_requests:
+            return False, f"Too few requests: {self.total} < {min_requests}"
+        
+        # Verifica taxa de erro
+        error_rate = self.fail / self.total if self.total > 0 else 1.0
+        if error_rate > max_error_rate:
+            return False, f"High error rate: {error_rate:.1%} > {max_error_rate:.1%}"
+        
+        # Verifica se houve alguma requisição bem-sucedida
+        if self.success == 0:
+            return False, "No successful requests"
+        
+        return True, "OK"
 
 
 class LoadTester:
@@ -101,25 +129,28 @@ class LoadTester:
                 self.profile = get_profile(self.config.profile)
                 log(f"Loaded workload profile: {self.profile.name}")
             except ValueError as e:
-                log(f"Failed to load profile {self.config.profile}: {e}. Using default.", level="warning")
+                log(
+                    f"Failed to load profile {self.config.profile}: {e}. Using fixed concurrency.",
+                    level="warning",
+                )
 
-    def run(
+    def _run_phase(
         self,
         url: str,
-        duration: Optional[int] = None,
-        concurrency: Optional[int] = None,
-        profile: Optional[WorkloadProfile] = None,
-        timeout: Optional[int] = None
+        duration: int,
+        concurrency: int,
+        timeout: int,
+        phase_name: str = "test",
     ) -> LoadTestResult:
         """
-        Executa um teste de carga.
+        Executa uma fase de teste de carga (warm-up ou teste real).
 
         Args:
             url: URL para testar
-            duration: Duração em segundos (usa config se None)
-            concurrency: Concorrência fixa (usa profile se None)
-            profile: Perfil de carga (usa config se None)
-            timeout: Timeout por requisição (usa config se None)
+            duration: Duração em segundos
+            concurrency: Número de workers concorrentes
+            timeout: Timeout por requisição
+            phase_name: Nome da fase (para logging)
 
         Returns:
             Resultado do teste
@@ -127,9 +158,6 @@ class LoadTester:
         Raises:
             LoadTestError: Se o teste falhar
         """
-        duration = duration or self.config.duration
-        timeout = timeout or self.config.timeout
-        profile = profile or self.profile
 
         result = LoadTestResult()
         start_time = time.time()
@@ -158,7 +186,10 @@ class LoadTester:
                             success_count += 1
                             worker_latencies.append(latency)
                         else:
-                            log(f"Request status_code not 200: {response.status_code} - {response.text}", level="debug")
+                            log(
+                                f"Request status_code not 200: {response.status_code} - {response.text}",
+                                level="debug",
+                            )
                             fail_count += 1
 
                 except requests.exceptions.Timeout:
@@ -173,22 +204,21 @@ class LoadTester:
                 # Pequeno delay para evitar sobrecarga
                 time.sleep(0.01)
 
-            # Adiciona latências ao pool global
+            # Adiciona latências ao pool global com lock
             with lock:
                 latencies.extend(worker_latencies)
 
-        # Determina número de workers
-        if profile and not concurrency:
-            # Usa max_concurrency do perfil
-            num_workers = profile.max_concurrency
-        else:
-            num_workers = concurrency or self.config.concurrency
+        num_workers = concurrency
 
-        log(f"Starting load test: url={url}, duration={duration}s, workers={num_workers}, profile={profile.name if profile else 'fixed'}")
+        log(
+            f"Starting {phase_name} phase: url={url}, duration={duration}s, workers={num_workers}"
+        )
 
         try:
             # Executa workers
-            with concurrent.futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=num_workers
+            ) as executor:
                 futures = [executor.submit(worker, i) for i in range(num_workers)]
                 concurrent.futures.wait(futures)
 
@@ -199,8 +229,10 @@ class LoadTester:
             result.fail = fail_count
             result.finalize()
 
-            log("Load test completed:")
-            log(f"  Requisições: {result.total} total ({result.success} sucesso, {result.fail} falhas)")
+            log(f"{phase_name.capitalize()} phase completed:")
+            log(
+                f"  Requisições: {result.total} total ({result.success} sucesso, {result.fail} falhas)"
+            )
             log(f"  Taxa de sucesso: {result.success_rate*100:.2f}%")
             log(f"  Throughput: {result.throughput:.2f} req/s")
             log(f"  Duração: {result.duration:.2f}s")
@@ -215,6 +247,78 @@ class LoadTester:
             return result
 
         except Exception as e:
-            raise LoadTestError(f"Load test failed: {e}") from e
+            raise LoadTestError(f"{phase_name.capitalize()} phase failed: {e}") from e
+    
+    def run(
+        self,
+        url: str,
+        duration: Optional[int] = None,
+        concurrency: Optional[int] = None,
+        profile: Optional[WorkloadProfile] = None,
+        timeout: Optional[int] = None,
+        skip_warmup: bool = False,
+    ) -> LoadTestResult:
+        """
+        Executa um teste de carga completo (com warm-up opcional).
 
+        Args:
+            url: URL para testar
+            duration: Duração em segundos (usa config se None)
+            concurrency: Concorrência fixa (usa profile se None)
+            profile: Perfil de carga (usa config se None)
+            timeout: Timeout por requisição (usa config se None)
+            skip_warmup: Se True, pula fase de warm-up
 
+        Returns:
+            Resultado do teste (apenas da fase principal, não inclui warm-up)
+
+        Raises:
+            LoadTestError: Se o teste falhar
+        """
+        duration = duration or self.config.duration
+        timeout = timeout or self.config.timeout
+        profile = profile or self.profile
+        
+        # Determina concorrência
+        if profile and not concurrency:
+            concurrency = profile.max_concurrency
+        else:
+            concurrency = concurrency or self.config.concurrency
+        
+        # Fase 1: Warm-up (opcional)
+        if not skip_warmup and self.config.warmup_duration > 0:
+            log(f"🔥 Starting warm-up phase ({self.config.warmup_duration}s with {self.config.warmup_concurrency} workers)...")
+            try:
+                warmup_result = self._run_phase(
+                    url=url,
+                    duration=self.config.warmup_duration,
+                    concurrency=self.config.warmup_concurrency,
+                    timeout=timeout,
+                    phase_name="warm-up",
+                )
+                log(f"✅ Warm-up completed: {warmup_result.total} requests, {warmup_result.success_rate*100:.1f}% success")
+            except Exception as e:
+                log(f"⚠️ Warm-up failed: {e}. Continuing with main test...", level="warning")
+        
+        # Fase 2: Teste principal
+        log(f"🚀 Starting main load test ({duration}s with {concurrency} workers)...")
+        result = self._run_phase(
+            url=url,
+            duration=duration,
+            concurrency=concurrency,
+            timeout=timeout,
+            phase_name="load test",
+        )
+        
+        # Validação
+        is_valid, reason = result.is_valid(
+            min_requests=self.config.min_requests,
+            max_error_rate=self.config.max_error_rate,
+        )
+        
+        if not is_valid:
+            log(f"⚠️ Load test validation failed: {reason}", level="warning")
+        else:
+            log(f"✅ Load test validation passed")
+        
+        return result

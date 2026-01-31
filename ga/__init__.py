@@ -12,7 +12,7 @@ from .exceptions import (
     ConfigurationError,
     EvaluationError,
     KubernetesError,
-    PrometheusError
+    PrometheusError,
 )
 
 __all__ = [

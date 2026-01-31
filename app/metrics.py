@@ -5,6 +5,7 @@ import time
 REQUEST_COUNT = Counter("app_requests_total", "Total requests")
 REQUEST_LATENCY = Histogram("app_request_latency_seconds", "Request latency")
 
+
 def setup_metrics(app):
     @app.middleware("http")
     async def metrics_middleware(request, call_next):

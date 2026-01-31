@@ -3,6 +3,7 @@
 Sistema de cache para resultados de avaliação.
 Evita reavaliar configurações idênticas.
 """
+
 import time
 import hashlib
 import json
@@ -29,16 +30,16 @@ class EvaluationCache:
 
     def _get_key(self, individual: Individual) -> str:
         """
-        Gera chave única para um indivíduo.
+        Gera chave única para um indivíduo usando SHA-256.
 
         Args:
             individual: Indivíduo
 
         Returns:
-            Chave hash
+            Chave hash (SHA-256)
         """
         data = json.dumps(individual.to_dict(), sort_keys=True)
-        return hashlib.md5(data.encode()).hexdigest()
+        return hashlib.sha256(data.encode()).hexdigest()
 
     def get(self, individual: Individual) -> Optional[EvaluationResult]:
         """
@@ -93,7 +94,8 @@ class EvaluationCache:
         """
         now = time.time()
         expired_keys = [
-            key for key, (timestamp, _) in self.cache.items()
+            key
+            for key, (timestamp, _) in self.cache.items()
             if now - timestamp >= self.ttl
         ]
 
@@ -104,5 +106,3 @@ class EvaluationCache:
             log(f"Cleaned up {len(expired_keys)} expired cache entries")
 
         return len(expired_keys)
-
-

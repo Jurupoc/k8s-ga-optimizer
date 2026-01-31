@@ -2,6 +2,7 @@
 """
 Utilitários compartilhados entre módulos.
 """
+
 import os
 import logging
 import json
@@ -13,7 +14,7 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "DEBUG").upper()
 logging.basicConfig(
     level=LOG_LEVEL,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("app")
 logger.setLevel(LOG_LEVEL)
@@ -65,3 +66,20 @@ def safe_divide(numerator: float, denominator: float, default: float = 0.0) -> f
     if denominator == 0 or abs(denominator) < 1e-10:
         return default
     return numerator / denominator
+
+
+def calculate_variance(values: list) -> float:
+    """
+    Calcula a variância de uma lista de valores.
+
+    Args:
+        values: Lista de valores numéricos
+
+    Returns:
+        Variância dos valores (0.0 se lista vazia ou com 1 elemento)
+    """
+    if not values or len(values) < 2:
+        return 0.0
+    
+    mean = sum(values) / len(values)
+    return sum((x - mean) ** 2 for x in values) / len(values)

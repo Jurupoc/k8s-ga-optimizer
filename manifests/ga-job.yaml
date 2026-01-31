@@ -68,6 +68,41 @@ spec:
           value: "128"
         - name: GA_MEMORY_MAX
           value: "1024"
+        # Novas configurações de avaliação
+        - name: GA_EVALUATION_DELAY
+          value: "2"
+        - name: GA_SLA_LATENCY_MS
+          value: "2000.0"
+        # Configuração de warm-up
+        - name: K8S_WARMUP_TIME
+          value: "10"
+        # Configurações de Load Test
+        - name: LOAD_TEST_DURATION
+          value: "30"
+        - name: LOAD_TEST_CONCURRENCY
+          value: "10"
+        - name: LOAD_TEST_TIMEOUT
+          value: "10"
+        - name: LOAD_TEST_PROFILE
+          value: ""  # Vazio = sem perfil (carga fixa). Opções: burst, wave, spiky, ramp_up, sustained
+        - name: LOAD_TEST_WARMUP_DURATION
+          value: "5"
+        - name: LOAD_TEST_WARMUP_CONCURRENCY
+          value: "2"
+        - name: LOAD_TEST_MIN_REQUESTS
+          value: "50"
+        - name: LOAD_TEST_MAX_ERROR_RATE
+          value: "0.8"
+        # Configurações de Prometheus
+        - name: PROM_QUERY_TIMEOUT
+          value: "10"
+        - name: PROM_RETRY_ATTEMPTS
+          value: "3"
+        - name: PROM_RETRY_DELAY
+          value: "1.0"
+        # Configurações de Log
+        - name: LOG_LEVEL
+          value: "INFO"
       volumes:
       - name: results
         persistentVolumeClaim:

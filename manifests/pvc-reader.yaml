@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ga-results-reader
+  namespace: default
+spec:
+  restartPolicy: Never
+  containers:
+  - name: reader
+    image: busybox
+    command: ["sh", "-c", "sleep 3600"]
+    volumeMounts:
+    - name: results
+      mountPath: /results
+  volumes:
+  - name: results
+    persistentVolumeClaim:
+      claimName: ga-results-pvc

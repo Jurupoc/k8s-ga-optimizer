@@ -3,6 +3,11 @@
 Executor principal do Algoritmo Genético refatorado.
 Usa módulos modulares: population, fitness, cache, etc.
 """
+
+import time
+import json
+from pathlib import Path
+from datetime import datetime
 from typing import List, Optional
 
 from ga.types import Individual, GenerationStats, EvaluationResult
@@ -25,7 +30,8 @@ class GeneticOptimizer:
     def __init__(
         self,
         params: Optional[GAParameters] = None,
-        app_config: Optional[AppConfig] = None
+        app_config: Optional[AppConfig] = None,
+        checkpoint_file: Optional[str] = None,
     ):
         """
         Inicializa o otimizador.
@@ -33,22 +39,24 @@ class GeneticOptimizer:
         Args:
             params: Parâmetros do GA
             app_config: Configuração da aplicação
+            checkpoint_file: Arquivo para salvar checkpoints incrementais (opcional)
         """
         self.params = params or GAParameters.from_env()
         self.app_config = app_config or AppConfig.from_env()
+        self.checkpoint_file = checkpoint_file
 
         # Inicializa componentes
         self.pop_manager = PopulationManager(self.params)
         self.prometheus = PrometheusClient()
         self.k8s = KubernetesClient(self.app_config)
         self.load_tester = LoadTester()
-        self.fitness_calc = FitnessCalculator()
+        self.fitness_calc = FitnessCalculator(sla_latency_ms=self.params.sla_latency_ms)
         self.evaluator = FitnessEvaluator(
             self.prometheus,
             self.k8s,
             self.load_tester,
             self.app_config,
-            self.fitness_calc
+            self.fitness_calc,
         )
         self.cache = EvaluationCache(ttl=3600.0)
 
@@ -72,39 +80,40 @@ class GeneticOptimizer:
             return cached
 
         # Avalia
-        import time as time_module
-        start_time = time_module.time()
+        start_time = time.time()
 
         try:
             fitness, metrics = self.evaluator.evaluate(individual)
-            evaluation_time = time_module.time() - start_time
+            evaluation_time = time.time() - start_time
 
             result = EvaluationResult(
                 individual=individual,
                 fitness=fitness,
                 metrics=metrics,
-                evaluation_time=evaluation_time
+                evaluation_time=evaluation_time,
             )
 
-            # Armazena no cache
-            self.cache.put(individual, result)
+            # Armazena no cache apenas se fitness > 0 (resultado válido)
+            # Resultados com fitness 0.0 podem indicar erro e não devem ser cacheados
+            if fitness > 0.0:
+                self.cache.put(individual, result)
+            else:
+                log(f"⚠️ Not caching result with fitness=0.0 for {individual}", level="debug")
 
             return result
 
         except Exception as e:
-            log(f"Evaluation failed for {individual}: {e}", level="error")
+            log(f"❌ Evaluation failed for {individual}: {e}", level="error")
+            # NÃO cacheia resultados de erro - permite retry em futuras gerações
             return EvaluationResult(
                 individual=individual,
                 fitness=0.0,
                 metrics=None,
-                evaluation_time=time_module.time() - start_time,
-                error=str(e)
+                evaluation_time=time.time() - start_time,
+                error=str(e),
             )
 
-    def _evaluate_population(
-        self,
-        population: Population
-    ) -> List[EvaluationResult]:
+    def _evaluate_population(self, population: Population) -> List[EvaluationResult]:
         """
         Avalia toda a população.
 
@@ -114,19 +123,27 @@ class GeneticOptimizer:
         Returns:
             Lista de resultados
         """
+        # Delay entre avaliações para evitar sobrecarga da API do Kubernetes
+        evaluation_delay = self.params.evaluation_delay
+
         # Avaliação sequencial
         results = []
         for idx, individual in enumerate(population.individuals):
-            log(f"Evaluating individual {idx+1}/{len(population.individuals)}: {individual}")
+            log(
+                f"Evaluating individual {idx+1}/{len(population.individuals)}: {individual}"
+            )
             result = self._evaluate_individual(individual)
             results.append(result)
+
+            # Delay entre avaliações (exceto após a última)
+            if idx < len(population.individuals) - 1 and evaluation_delay > 0:
+                log(f"Waiting {evaluation_delay}s before next evaluation...", level="debug")
+                time.sleep(evaluation_delay)
 
         return results
 
     def _calculate_generation_stats(
-        self,
-        population: Population,
-        results: List[EvaluationResult]
+        self, population: Population, results: List[EvaluationResult]
     ) -> GenerationStats:
         """
         Calcula estatísticas da geração.
@@ -156,7 +173,9 @@ class GeneticOptimizer:
 
         # Convergência (variação dos scores)
         if len(fitness_scores) > 1:
-            variance = sum((s - avg_fitness) ** 2 for s in fitness_scores) / len(fitness_scores)
+            variance = sum((s - avg_fitness) ** 2 for s in fitness_scores) / len(
+                fitness_scores
+            )
             convergence = 1.0 / (1.0 + variance)  # menor variância = maior convergência
         else:
             convergence = 0.0
@@ -169,7 +188,7 @@ class GeneticOptimizer:
             min_fitness=min_fitness,
             best_individual=best_individual,
             diversity=diversity,
-            convergence=convergence
+            convergence=convergence,
         )
 
     def run(self) -> Individual:
@@ -210,13 +229,17 @@ class GeneticOptimizer:
 
             # Atualiza melhor global
             fitness_scores = [r.fitness for r in results]
-            current_best_idx = max(range(len(fitness_scores)), key=lambda i: fitness_scores[i])
+            current_best_idx = max(
+                range(len(fitness_scores)), key=lambda i: fitness_scores[i]
+            )
             current_best = results[current_best_idx]
 
             if current_best.fitness > best_fitness:
                 best_fitness = current_best.fitness
                 best_individual = current_best.individual
-                log(f"✨ New global best: {best_individual} (fitness: {best_fitness:.4f})")
+                log(
+                    f"✨ New global best: {best_individual} (fitness: {best_fitness:.4f})"
+                )
 
             # Log estatísticas
             log(f"Generation {stats.generation} statistics:")
@@ -226,16 +249,20 @@ class GeneticOptimizer:
             log(f"  Diversity: {stats.diversity:.4f}")
             log(f"  Convergence: {stats.convergence:.4f}")
             log(f"  Best individual: {stats.best_individual}")
-            
+
             # Log detalhado de cada indivíduo com fitness
             log(f"\nPopulation details (Generation {stats.generation}):")
             for idx, individual in enumerate(population.individuals):
                 fitness = fitness_scores[idx] if idx < len(fitness_scores) else 0.0
-                log(f"  Individual {idx + 1}: REPLICAS={individual.replicas}, CPU={individual.cpu_limit}, MEMORY={individual.memory_limit} → fitness={fitness:.4f}")
+                log(
+                    f"  Individual {idx + 1}: REPLICAS={individual.replicas}, CPU={individual.cpu_limit}, MEMORY={individual.memory_limit} → fitness={fitness:.4f}"
+                )
+
+            # Salva checkpoint
+            self.save_checkpoint(gen + 1, best_individual, best_fitness)
 
             # Evolui para próxima geração
             if gen < self.params.generations - 1:  # Não evolui na última geração
-                fitness_scores = [r.fitness for r in results]
                 population = self.pop_manager.evolve(population, fitness_scores)
 
         # Aplica melhor configuração
@@ -261,6 +288,46 @@ class GeneticOptimizer:
     def get_evaluation_results(self) -> List[EvaluationResult]:
         """Retorna todos os resultados de avaliação."""
         return self.evaluation_results
+
+    def save_checkpoint(self, generation: int, best_individual: Optional[Individual], best_fitness: float):
+        """
+        Salva checkpoint incremental do progresso.
+
+        Args:
+            generation: Geração atual
+            best_individual: Melhor indivíduo até agora
+            best_fitness: Melhor fitness até agora
+        """
+        if not self.checkpoint_file:
+            return
+
+        try:
+            checkpoint_data = {
+                "timestamp": datetime.now().isoformat(),
+                "generation": generation,
+                "total_generations": self.params.generations,
+                "best_individual": best_individual.to_dict() if best_individual else None,
+                "best_fitness": best_fitness,
+                "completed_generations": len(self.history),
+                "total_evaluations": len(self.evaluation_results),
+                "cache_size": self.cache.size(),
+            }
+
+            checkpoint_path = Path(self.checkpoint_file)
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(checkpoint_path, "w") as f:
+                json.dump(checkpoint_data, f, indent=2, default=str)
+
+            log(f"Checkpoint saved: generation {generation}/{self.params.generations}", level="debug")
+
+            # Limpa cache expirado periodicamente (a cada checkpoint)
+            expired = self.cache.cleanup_expired()
+            if expired > 0:
+                log(f"Cleaned up {expired} expired cache entries", level="debug")
+
+        except Exception as e:
+            log(f"Failed to save checkpoint: {e}", level="warning")
 
 
 def run() -> Optional[Individual]:

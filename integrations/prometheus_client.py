@@ -3,6 +3,7 @@
 Cliente robusto para integração com Prometheus.
 Inclui retries, timeouts, cache e tolerância a falhas.
 """
+
 import time
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
@@ -34,14 +35,13 @@ class PrometheusClient:
         """Obtém ou cria o cliente Prometheus."""
         if self._client is None:
             try:
-                self._client = PrometheusConnect(
-                    url=self.config.url,
-                    disable_ssl=True
-                )
+                self._client = PrometheusConnect(url=self.config.url, disable_ssl=True)
                 # Testa conexão
                 end_time = datetime.now()
                 start_time = end_time - timedelta(minutes=1)
-                self._client.get_metric_range_data("up", start_time=start_time, end_time=end_time)
+                self._client.get_metric_range_data(
+                    "up", start_time=start_time, end_time=end_time
+                )
 
                 log(f"Prometheus connection established: {self.config.url}")
             except Exception as e:
@@ -70,13 +70,23 @@ class PrometheusClient:
             except Exception as e:
                 last_error = e
                 if attempt < self.config.retry_attempts - 1:
-                    wait_time = self.config.retry_delay * (2 ** attempt)  # exponential backoff
-                    log(f"Prometheus query failed (attempt {attempt+1}/{self.config.retry_attempts}): {e}. Retrying in {wait_time}s...", level="warning")
+                    wait_time = self.config.retry_delay * (
+                        2**attempt
+                    )  # exponential backoff
+                    log(
+                        f"Prometheus query failed (attempt {attempt+1}/{self.config.retry_attempts}): {e}. Retrying in {wait_time}s...",
+                        level="warning",
+                    )
                     time.sleep(wait_time)
                 else:
-                    log(f"Prometheus query failed after {self.config.retry_attempts} attempts: {e}", level="error")
+                    log(
+                        f"Prometheus query failed after {self.config.retry_attempts} attempts: {e}",
+                        level="error",
+                    )
 
-        raise PrometheusError(f"Query failed after {self.config.retry_attempts} attempts: {last_error}") from last_error
+        raise PrometheusError(
+            f"Query failed after {self.config.retry_attempts} attempts: {last_error}"
+        ) from last_error
 
     def _query_with_cache(self, query: str, use_cache: bool = True) -> Any:
         """
@@ -108,7 +118,9 @@ class PrometheusClient:
 
         return result
 
-    def query_instant(self, query: str, default: float = 0.0, use_cache: bool = False) -> float:
+    def query_instant(
+        self, query: str, default: float = 0.0, use_cache: bool = False
+    ) -> float:
         """
         Executa uma query instantânea e retorna valor numérico.
 
@@ -128,7 +140,10 @@ class PrometheusClient:
                     return float(value)
                 elif isinstance(result[0].get("value"), list):
                     return float(result[0]["value"][1])
-            log(f"Query returned no results.\nQUERY: {query}\nRESULT: {result}", level="warning")
+            log(
+                f"Query returned no results.\nQUERY: {query}\nRESULT: {result}",
+                level="warning",
+            )
             return default
         except PrometheusError:
             raise
@@ -141,12 +156,38 @@ class PrometheusClient:
         query = f'avg(rate(container_cpu_usage_seconds_total{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s]))'
         return self.query_instant(query)
 
+    def get_cpu_throttling(self, app_label: str, segundos: int = 30) -> float:
+        """Retorna throttling de CPU."""
+        query = f'rate(container_cpu_cfs_throttled_seconds_total{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s])'
+        return self.query_instant(query)
+
     def get_memory_usage(self, app_label: str, segundos: int = 30) -> float:
         """Retorna uso médio de memória em bytes."""
         query = f'avg_over_time(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s])'
+        return self.query_instant(query)
+
+    def get_peak_memory_usage(self, app_label: str, segundos: int = 30) -> float:
+        """Retorna uso maximo de memória em bytes."""
+        query = f'max_over_time(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s])'
         return self.query_instant(query)
 
     def clear_cache(self):
         """Limpa o cache de queries."""
         self._cache.clear()
         log("Prometheus cache cleared", level="debug")
+
+    def is_healthy(self) -> bool:
+        """
+        Verifica se o Prometheus está saudável e acessível.
+
+        Returns:
+            True se Prometheus está OK, False caso contrário
+        """
+        try:
+            # Tenta fazer uma query simples
+            query = "up"
+            result = self.query_instant(query, default=None, use_cache=False)
+            return result is not None
+        except Exception as e:
+            log(f"Prometheus health check failed: {e}", level="debug")
+            return False

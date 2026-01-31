@@ -6,6 +6,11 @@ from .workload_profiles import WorkloadProfile, get_profile
 from .config import LoadTestConfig
 from .exceptions import LoadTestError
 
-__all__ = ["LoadTester", "LoadTestResult", "WorkloadProfile", "get_profile", "LoadTestConfig", "LoadTestError"]
-
-
+__all__ = [
+    "LoadTester",
+    "LoadTestResult",
+    "WorkloadProfile",
+    "get_profile",
+    "LoadTestConfig",
+    "LoadTestError",
+]

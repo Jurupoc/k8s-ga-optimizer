@@ -3,6 +3,8 @@
 Cálculo de fitness multicritério para o algoritmo genético.
 Considera throughput, latência, uso de recursos e taxa de erros.
 """
+
+import time
 from typing import Optional
 from dataclasses import dataclass
 
@@ -15,17 +17,19 @@ class FitnessWeights:
     """
     Pesos para cálculo de fitness multicritério.
     """
-    throughput_weight: float = 0.3
-    latency_weight: float = 0.25
-    resource_efficiency_weight: float = 0.25
-    reliability_weight: float = 0.2
+
+    latency_weight: float = 0.35
+    resource_efficiency_weight: float = 0.4
+    reliability_weight: float = 0.25
 
     def normalize(self):
         """Normaliza os pesos para somarem 1.0."""
-        total = (self.throughput_weight + self.latency_weight +
-                self.resource_efficiency_weight + self.reliability_weight)
+        total = (
+            + self.latency_weight
+            + self.resource_efficiency_weight
+            + self.reliability_weight
+        )
         if total > 0:
-            self.throughput_weight /= total
             self.latency_weight /= total
             self.resource_efficiency_weight /= total
             self.reliability_weight /= total
@@ -36,21 +40,19 @@ class FitnessCalculator:
     Calcula fitness de indivíduos baseado em métricas coletadas.
     """
 
-    def __init__(self, weights: Optional[FitnessWeights] = None):
+    def __init__(self, weights: Optional[FitnessWeights] = None, sla_latency_ms: float = 2000.0):
         """
         Inicializa o calculador de fitness.
 
         Args:
             weights: Pesos para cálculo (default: pesos balanceados)
+            sla_latency_ms: SLA de latência em milissegundos (default: 2000ms)
         """
         self.weights = weights or FitnessWeights()
         self.weights.normalize()
+        self.sla_latency_ms = sla_latency_ms
 
-    def calculate(
-        self,
-        individual: Individual,
-        metrics: FitnessMetrics
-    ) -> float:
+    def calculate(self, individual: Individual, metrics: FitnessMetrics) -> float:
         """
         Calcula fitness score de um indivíduo.
 
@@ -65,12 +67,10 @@ class FitnessCalculator:
         Returns:
             Score de fitness (valores maiores são melhores)
         """
-        # 1. Throughput score (normalizado)
-        # Maior throughput é melhor
-        throughput_score = self._normalize_throughput(metrics.throughput)
-
         # 2. Latency score (invertido: menor latência é melhor)
-        latency_score = self._normalize_latency(metrics.avg_latency, metrics.p95_latency)
+        latency_score = self._normalize_latency(
+            metrics.avg_latency, metrics.p95_latency, metrics.p99_latency
+        )
 
         # 3. Resource efficiency score
         # Penaliza uso excessivo de recursos sem benefício proporcional
@@ -82,15 +82,16 @@ class FitnessCalculator:
 
         # Fitness combinado
         fitness = (
-            self.weights.throughput_weight * throughput_score +
-            self.weights.latency_weight * latency_score +
-            self.weights.resource_efficiency_weight * efficiency_score +
-            self.weights.reliability_weight * reliability_score
+            + self.weights.latency_weight * latency_score
+            + self.weights.resource_efficiency_weight * efficiency_score
+            + self.weights.reliability_weight * reliability_score
         )
 
-        log(f"Fitness breakdown: throughput={throughput_score:.3f}, "
+        log(
+            f"Fitness breakdown: "
             f"latency={latency_score:.3f}, efficiency={efficiency_score:.3f}, "
-            f"reliability={reliability_score:.3f}, total={fitness:.4f}")
+            f"reliability={reliability_score:.3f}, total={fitness:.4f}"
+        )
 
         return fitness
 
@@ -107,73 +108,159 @@ class FitnessCalculator:
         normalized = 1.0 / (1.0 + 100.0 / throughput)
         return min(1.0, normalized)
 
-    def _normalize_latency(self, avg_latency: float, p95_latency: float) -> float:
+    def _normalize_latency(
+        self,
+        avg_latency: float,
+        p95_latency: float,
+        p99_latency: float,
+    ) -> float:
         """
-        Normaliza latência para [0, 1] (invertido: menor é melhor).
+        Normaliza latência para [0,1] (maior é melhor).
 
-        Considera tanto latência média quanto p95.
+        Baseada em:
+        - Média (impacto geral)
+        - P95 (tail latency)
+        - P99 (cauda extrema)
+
+        Usa o SLA configurado para definir quando a latência passa a ser inaceitável.
         """
-        if avg_latency <= 0:
-            return 1.0
+        # Penalização suave baseada em SLA
+        def latency_score(lat_ms: float) -> float:
+            if lat_ms <= 0:
+                return 1.0
+            # lat <= SLA → score ~1
+            # lat >> SLA → score → 0
+            return 1.0 / (1.0 + (lat_ms / self.sla_latency_ms))
 
-        # Penaliza tanto latência média alta quanto p95 alto
-        # Latência < 100ms = excelente, > 1s = ruim
-        avg_score = 1.0 / (1.0 + avg_latency * 10)  # 100ms = 0.5, 1s = 0.09
-        p95_score = 1.0 / (1.0 + p95_latency * 5) if p95_latency > 0 else 1.0
+        avg_score = latency_score(avg_latency)
+        p95_score = latency_score(p95_latency)
+        p99_score = latency_score(p99_latency)
 
-        # Média ponderada (p95 tem mais peso)
-        return 0.4 * avg_score + 0.6 * p95_score
+        return (
+            0.2 * avg_score +
+            0.4 * p95_score +
+            0.4 * p99_score
+        )
 
-    def _calculate_efficiency(self, individual: Individual, metrics: FitnessMetrics) -> float:
+    def _calculate_efficiency(
+        self, individual: Individual, metrics: FitnessMetrics
+    ) -> float:
         """
-        Calcula score de eficiência de recursos.
+        Calcula eficiência de recursos (0–1) combinando:
+          1) Produtividade por recurso (throughput por CPU e por memória)
+          2) Qualidade de utilização (evita underuse e saturação)
+          3) Penalização por CPU throttling
+          4) Penalização por pico de memória (risco de OOM)
 
-        Penaliza configurações que usam muitos recursos sem benefício proporcional.
+        Premissa: throughput/latência vêm do load test; CPU/mem vêm do Prometheus.
         """
-        # Utilização de recursos (0.0 a 1.0)
-        cpu_util = metrics.cpu_utilization
-        mem_util = metrics.memory_utilization
+        eps = 1e-6
 
-        # Utilização média
-        avg_util = (cpu_util + mem_util) / 2.0
+        # ---------------------------
+        # 1) Produtividade por recurso
+        # ---------------------------
+        # CPU usage em "cores" (ex: 0.52 = 52% de um core)
+        cpu_usage_cores = max(metrics.cpu_usage, 0.0)
 
-        # Eficiência: melhor se usar recursos de forma equilibrada
-        # Utilização muito baixa (< 0.3) = desperdício
-        # Utilização muito alta (> 0.9) = risco de saturação
-        # Utilização ideal = 0.5-0.7
+        # Memory usage em bytes -> MiB
+        mem_usage_mib = max(metrics.memory_usage / (1024 * 1024), 0.0)
 
-        if avg_util < 0.3:
-            # Desperdício de recursos
-            efficiency = avg_util / 0.3  # penaliza
-        elif avg_util > 0.9:
-            # Risco de saturação
-            efficiency = (1.0 - avg_util) / 0.1  # penaliza
+        # Throughput em req/s
+        thr = max(metrics.throughput, 0.0)
+
+        # Eficiência "req/s por core" e "req/s por MiB"
+        cpu_eff = thr / (cpu_usage_cores + eps)
+        mem_eff = thr / (mem_usage_mib + eps)
+
+        # Normalização suave em [0,1] sem depender de constantes globais:
+        # x/(x+1) comprime valores grandes e evita explosões numéricas.
+        cpu_eff_score = cpu_eff / (cpu_eff + 1.0)
+        mem_eff_score = mem_eff / (mem_eff + 1.0)
+
+        # ---------------------------
+        # 2) Qualidade de utilização
+        # ---------------------------
+        # Queremos evitar:
+        # - underuse (muito abaixo de ~0.3)
+        # - saturação (muito acima de ~0.9)
+        #
+        # target define a zona de melhor equilíbrio.
+        def util_quality(u: float, low: float = 0.3, high: float = 0.9, target: float = 0.6) -> float:
+            # clamp
+            u = 0.0 if u is None else max(0.0, min(1.0, u))
+            if u < low:
+                return u / low  # 0..1
+            if u > high:
+                return max(0.0, (1.0 - u) / (1.0 - high))  # 1..0
+            # triangular peak at target within [low, high]
+            width = (high - low)
+            return max(0.0, 1.0 - abs(u - target) / (width / 2.0))
+
+        cpu_q = util_quality(metrics.cpu_utilization)
+        mem_q = util_quality(metrics.memory_utilization)
+
+        util_score = 0.6 * cpu_q + 0.4 * mem_q  # CPU tende a ser mais dinâmico que memória
+
+        # ---------------------------
+        # 3) Penalização por throttling (CPU)
+        # ---------------------------
+        # cpu_throttling normalmente é "segundos throttled por segundo" agregado (rate).
+        # Se > 0, há restrição real. Penalizamos suavemente.
+        thrott = max(metrics.cpu_throttling or 0.0, 0.0)
+        # penalidade suave: 0 -> 1.0, cresce e aproxima de 0
+        thrott_penalty = 1.0 / (1.0 + 5.0 * thrott)  # ajuste 5.0 conforme observado
+
+        # ---------------------------
+        # 4) Penalização por pico de memória (risco OOM)
+        # ---------------------------
+        # memory_peak_usage em bytes. Convertemos para MiB e calculamos pico/limite.
+        peak_mib = max((metrics.memory_peak_usage or 0.0) / (1024 * 1024), 0.0)
+        mem_limit_mib = max(float(individual.memory_limit), eps)
+
+        peak_ratio = peak_mib / mem_limit_mib  # ideal < 0.9
+        # penaliza forte quando passa de 0.9
+        if peak_ratio <= 0.9:
+            mem_peak_penalty = 1.0
         else:
-            # Zona ideal
-            efficiency = 1.0 - abs(avg_util - 0.6) / 0.3  # pico em 0.6
+            # cai rapidamente acima de 0.9; ex: 1.0 -> 0.5, 1.1 -> ~0.33
+            mem_peak_penalty = 1.0 / (1.0 + 10.0 * (peak_ratio - 0.9))
 
-        # Bonus por throughput alto com recursos baixos
-        if metrics.throughput > 50 and avg_util < 0.5:
-            efficiency *= 1.2  # bonus de 20%
+        # ---------------------------
+        # 5) Combinação final
+        # ---------------------------
+        # Produtividade por recurso (cpu/mem) + saúde de uso + penalidades
+        productivity_score = 0.7 * cpu_eff_score + 0.3 * mem_eff_score
 
-        return min(1.0, max(0.0, efficiency))
+        efficiency = (
+            0.55 * productivity_score +
+            0.45 * util_score
+        )
+
+        efficiency *= thrott_penalty
+        efficiency *= mem_peak_penalty
+
+        return max(0.0, min(1.0, efficiency))
 
     def _calculate_reliability(self, metrics: FitnessMetrics) -> float:
         """
-        Calcula score de confiabilidade.
+        Calcula confiabilidade (0–1).
 
-        Penaliza alta taxa de erros e baixa taxa de sucesso.
+        Objetivo:
+        - Recompensar alta taxa de sucesso
+        - Penalizar qualquer erro
+        - Penalizar instabilidade (erros concentrados ou frequentes)
         """
-        # Taxa de sucesso (0.0 a 1.0)
-        success_rate = metrics.success_rate
 
-        # Taxa de erros normalizada
-        error_rate_norm = min(1.0, metrics.error_rate / 10.0)  # > 10 errors/s = ruim
+        success = max(0.0, min(1.0, metrics.success_rate))
+        error_rate = max(0.0, metrics.error_rate)
 
-        # Score de confiabilidade
-        reliability = success_rate * (1.0 - error_rate_norm * 0.5)
+        # Penalização suave por erros:
+        # 0 erros -> 1.0
+        # cresce rapidamente com erros
+        error_penalty = 1.0 / (1.0 + 20.0 * error_rate)
+        reliability = success * error_penalty
 
-        return max(0.0, reliability)
+        return max(0.0, min(1.0, reliability))
 
 
 class FitnessEvaluator:
@@ -187,7 +274,7 @@ class FitnessEvaluator:
         k8s_client,
         load_tester,
         app_config,
-        fitness_calculator: Optional[FitnessCalculator] = None
+        fitness_calculator: Optional[FitnessCalculator] = None,
     ):
         """
         Inicializa o avaliador.
@@ -215,7 +302,6 @@ class FitnessEvaluator:
         Returns:
             Tupla (fitness_score, metrics)
         """
-        import time
         start_time = time.time()
 
         try:
@@ -223,7 +309,10 @@ class FitnessEvaluator:
             self.k8s.apply_configuration(individual, save_for_rollback=True)
 
             # 1.5. Pequena pausa para garantir que o Kubernetes registrou as mudanças
-            log("Waiting for Kubernetes to register configuration changes...", level="debug")
+            log(
+                "Waiting for Kubernetes to register configuration changes...",
+                level="debug",
+            )
             time.sleep(3)
 
             # 2. Aguarda rollout
@@ -238,11 +327,27 @@ class FitnessEvaluator:
             load_result = self.load_tester.run(load_test_url)
 
             # 4. Coleta métricas do Prometheus
-            log(f"Collecting metrics from Prometheus for {self.app_config.label}", level="debug")
-            cpu_usage = self.prometheus.get_cpu_usage(self.app_config.label, segundos=30)
-            memory_usage = self.prometheus.get_memory_usage(self.app_config.label, segundos=30)
+            log(
+                f"Collecting metrics from Prometheus for {self.app_config.label}",
+                level="debug",
+            )
+            cpu_usage = self.prometheus.get_cpu_usage(
+                self.app_config.label, segundos=30
+            )
+            cpu_throttling = self.prometheus.get_cpu_throttling(
+                self.app_config.label, segundos=30
+            )
+            memory_usage = self.prometheus.get_memory_usage(
+                self.app_config.label, segundos=30
+            )
+            memory_peak_usage = self.prometheus.get_peak_memory_usage(
+                self.app_config.label, segundos=30
+            )
 
-            log(f"Metrics collected: CPU={cpu_usage}, MEMORY={memory_usage}", level="debug")
+            log(
+                f"Metrics collected: CPU={cpu_usage} CPU_THROTTLING={cpu_throttling}, MEMORY={memory_usage}, ,MEMORY_PEAK={memory_peak_usage}",
+                level="debug",
+            )
 
             # 5. Constrói métricas
             metrics = FitnessMetrics(
@@ -258,18 +363,25 @@ class FitnessEvaluator:
                 cpu_usage=cpu_usage,
                 memory_usage=memory_usage,
                 cpu_utilization=safe_divide(cpu_usage, individual.cpu_limit),
-                memory_utilization=safe_divide(memory_usage / (1024 * 1024), individual.memory_limit)
+                memory_utilization=safe_divide(
+                    memory_usage / (1024 * 1024), individual.memory_limit
+                ),
+                cpu_throttling=cpu_throttling,
+                memory_peak_usage=memory_peak_usage,
             )
 
             # 6. Calcula fitness
             fitness = self.calculator.calculate(individual, metrics)
 
             evaluation_time = time.time() - start_time
-            log(f"Evaluation completed in {evaluation_time:.2f}s: fitness={fitness:.4f}")
+            log(
+                f"Evaluation completed in {evaluation_time:.2f}s: fitness={fitness:.4f}"
+            )
 
             return fitness, metrics
 
         except Exception as e:
             log(f"Evaluation failed: {e}", level="error")
-            metrics = FitnessMetrics()
-            return 0.0, metrics
+            # Re-lança a exceção para que o optimizer possa decidir o que fazer
+            # (não cachear resultados de erro)
+            raise

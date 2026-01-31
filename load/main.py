@@ -4,7 +4,9 @@ from load.load_test import LoadTester
 
 def main() -> None:
     # Lê variáveis de ambiente do manifest
-    base_url = os.environ.get("TARGET_URL", "http://app-ga.default.svc.cluster.local:8080")
+    base_url = os.environ.get(
+        "TARGET_URL", "http://app-ga.default.svc.cluster.local:8080"
+    )
     duration = os.environ.get("DURATION")
     concurrency = os.environ.get("CONCURRENCY")
 
@@ -22,7 +24,7 @@ def main() -> None:
     load_tester.run(
         url=target_url,
         duration=int(duration) if duration else None,
-        concurrency=int(concurrency) if concurrency else None
+        concurrency=int(concurrency) if concurrency else None,
     )
 
 
