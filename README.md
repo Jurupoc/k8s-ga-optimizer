@@ -608,9 +608,9 @@ This project is part of an undergraduate thesis and is provided for educational 
 
 ## 👥 Authors
 
-- **Student:** [Your Name]
-- **Advisor:** [Advisor Name]
-- **Institution:** [University Name]
+- **Student:** João Victor de Oliveira Silva
+- **Advisor:** Lidiano A. N. Oliveira
+- **Institution:** Universidade Federal Rural de Pernambuco
 - **Year:** 2025
 
 ---
@@ -620,11 +620,11 @@ This project is part of an undergraduate thesis and is provided for educational 
 If you use this work in your research, please cite:
 
 ```bibtex
-@thesis{yourname2025ga,
+@thesis{joao.oliveirasilva2025ga,
   title={Application of Genetic Algorithms for Resource Optimization in Kubernetes Environments},
-  author={Your Name},
+  author={João Victor de Oliveira Silva},
   year={2025},
-  school={University Name},
+  school={Universidade Federal Rural de Pernambuco},
   type={Bachelor's Thesis}
 }
 ```
@@ -642,4 +642,4 @@ If you use this work in your research, please cite:
 
 ## 📞 Contact
 
-For questions or issues, please open an issue on the repository or contact [your.email@university.edu].
+For questions or issues, please open an issue on the repository or contact [joao.oliveirasilva@ufrpe.br].
