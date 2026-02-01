@@ -42,24 +42,36 @@ The final configuration discovered by the GA is then **compared against a baseli
 
 ### Fitness Function
 
-The fitness score combines multiple weighted metrics:
+The fitness score combines multiple weighted metrics normalized to [0, 1]:
 
-- **Throughput** (requests/second)
-- **Latency** (average, P50, P95, P99)
-- **Resource Efficiency** (CPU and memory utilization vs. throughput)
-- **Reliability** (success rate, error rate)
-- **CPU Throttling** (penalty for resource contention)
+- **Latency** (average, P95, P99) - Lower is better, normalized against SLA (default: 2000ms)
+- **Resource Efficiency** - Combines productivity (throughput per resource), utilization quality, and penalties for throttling and memory peaks
+- **Reliability** (success rate, error rate) - Higher success rate is better, errors are penalized
 
 **Formula:**
 ```
-fitness = (w1 × throughput_score) +
-          (w2 × latency_score) +
-          (w3 × efficiency_score) +
-          (w4 × reliability_score) -
-          (w5 × throttling_penalty)
+fitness = (w1 × latency_score) +
+          (w2 × efficiency_score) +
+          (w3 × reliability_score)
+
+where:
+  latency_score = 0.2 × avg_score + 0.4 × p95_score + 0.4 × p99_score
+
+  efficiency_score = (0.55 × productivity + 0.45 × utilization) × throttling_penalty × mem_peak_penalty
+    productivity = 0.7 × cpu_efficiency + 0.3 × mem_efficiency
+    cpu_efficiency = throughput / cpu_usage (normalized)
+    mem_efficiency = throughput / mem_usage (normalized)
+
+  reliability_score = success_rate × error_penalty
+    error_penalty = 1 / (1 + 20 × error_rate)
 ```
 
-All weights are configurable via environment variables.
+**Default Weights (normalized to sum = 1.0):**
+- Latency: 0.35
+- Resource Efficiency: 0.40
+- Reliability: 0.25
+
+Weights are defined in `ga/fitness.py` (`FitnessWeights` class) and automatically normalized.
 
 ---
 
@@ -202,33 +214,38 @@ The GA behavior is fully configurable via environment variables in `manifests/ga
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GA_POPULATION_SIZE` | `6` | Number of individuals per generation |
+| `GA_POPULATION` | `6` | Number of individuals per generation |
 | `GA_GENERATIONS` | `5` | Number of generations to evolve |
 | `GA_MUTATION_RATE` | `0.2` | Probability of mutation (0.0-1.0) |
 | `GA_CROSSOVER_RATE` | `0.8` | Probability of crossover (0.0-1.0) |
 | `GA_ELITISM_COUNT` | `1` | Number of top individuals to preserve |
-| `GA_TOURNAMENT_SIZE` | `3` | Tournament selection size |
+| `GA_TOURNAMENT_SIZE` | `2` | Tournament selection size |
+| `GA_EVALUATION_DELAY` | `2` | Delay between evaluations (seconds) |
+| `GA_SLA_LATENCY_MS` | `2000.0` | SLA latency threshold (milliseconds) |
+| `GA_REQUIRE_PROMETHEUS_METRICS` | `false` | Fail evaluation if metrics unavailable |
 
 #### Resource Bounds
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `GA_MIN_REPLICAS` | `1` | Minimum number of replicas |
-| `GA_MAX_REPLICAS` | `10` | Maximum number of replicas |
-| `GA_MIN_CPU` | `0.1` | Minimum CPU limit (cores) |
-| `GA_MAX_CPU` | `2.0` | Maximum CPU limit (cores) |
-| `GA_MIN_MEMORY` | `128` | Minimum memory limit (MB) |
-| `GA_MAX_MEMORY` | `512` | Maximum memory limit (MB) |
+| `GA_REPLICAS_MIN` | `1` | Minimum number of replicas |
+| `GA_REPLICAS_MAX` | `6` | Maximum number of replicas |
+| `GA_CPU_MIN` | `0.1` | Minimum CPU limit (cores) |
+| `GA_CPU_MAX` | `4.0` | Maximum CPU limit (cores) |
+| `GA_MEMORY_MIN` | `128` | Minimum memory limit (MB) |
+| `GA_MEMORY_MAX` | `6000` | Maximum memory limit (MB) |
 
 #### Fitness Weights
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GA_WEIGHT_THROUGHPUT` | `1.0` | Weight for throughput score |
-| `GA_WEIGHT_LATENCY` | `1.0` | Weight for latency score |
-| `GA_WEIGHT_EFFICIENCY` | `0.5` | Weight for efficiency score |
-| `GA_WEIGHT_RELIABILITY` | `1.0` | Weight for reliability score |
-| `GA_WEIGHT_THROTTLING` | `0.3` | Weight for throttling penalty |
+**Note:** Fitness weights are hardcoded in `ga/fitness.py` (`FitnessWeights` class) and automatically normalized:
+
+| Component | Default Weight | Description |
+|-----------|----------------|-------------|
+| Latency | `0.35` | Weight for latency score (avg, P95, P99) |
+| Resource Efficiency | `0.40` | Weight for efficiency score (productivity + utilization) |
+| Reliability | `0.25` | Weight for reliability score (success rate, error penalty) |
+
+To modify weights, edit the `FitnessWeights` dataclass in `ga/fitness.py`.
 
 #### Load Test Configuration
 
@@ -248,20 +265,18 @@ The GA behavior is fully configurable via environment variables in `manifests/ga
 | `K8S_NAMESPACE` | `default` | Target namespace |
 | `K8S_DEPLOYMENT_NAME` | `app-ga` | Target deployment name |
 | `K8S_CONTAINER_NAME` | `app-ga` | Target container name |
-| `K8S_LABEL_SELECTOR` | `app=app-ga` | Pod label selector |
-| `K8S_ROLLOUT_TIMEOUT` | `300` | Rollout timeout (seconds) |
-| `K8S_API_TIMEOUT` | `60` | API request timeout (seconds) |
-| `K8S_MAX_RETRIES` | `3` | Max API retry attempts |
+| `APP_LABEL` | `app-ga` | Pod label selector |
+| `APP_URL` | `http://app-ga.default.svc.cluster.local:8080` | Application URL for load testing |
+| `K8S_WARMUP_TIME` | `10` | Warm-up time after rollout (seconds) |
 
 #### Prometheus Configuration
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PROMETHEUS_URL` | `http://prometheus-k8s.monitoring.svc:9090` | Prometheus server URL |
-| `PROMETHEUS_TIMEOUT` | `30` | Query timeout (seconds) |
-| `PROMETHEUS_MAX_RETRIES` | `3` | Max query retry attempts |
-| `PROMETHEUS_RETRY_DELAY` | `2` | Retry delay (seconds) |
-| `PROMETHEUS_CACHE_TTL` | `300` | Cache TTL (seconds) |
+| `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090` | Prometheus server URL |
+| `PROM_QUERY_TIMEOUT` | `10` | Query timeout (seconds) |
+| `PROM_RETRY_ATTEMPTS` | `3` | Max query retry attempts |
+| `PROM_RETRY_DELAY` | `1.0` | Retry delay (seconds) |
 
 ---
 
