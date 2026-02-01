@@ -13,8 +13,6 @@ app = FastAPI(
     title="Compute Service", description="Test workload API for GA optimization"
 )
 
-# ==================== Mixed Workload Endpoints ====================
-
 
 @app.get("/mixed")
 async def mixed_workload():

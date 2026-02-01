@@ -22,6 +22,7 @@ class GAParameters:
     # Configurações de avaliação
     evaluation_delay: int = 2  # Delay entre avaliações (segundos)
     sla_latency_ms: float = 2000.0  # SLA de latência em milissegundos
+    require_prometheus_metrics: bool = False  # Se True, falha avaliação se métricas não disponíveis
 
     # Limites dos parâmetros
     replicas_bounds: Tuple[int, int] = (1, 6)
@@ -40,6 +41,7 @@ class GAParameters:
         tournament_size = int(os.environ.get("GA_TOURNAMENT_SIZE", "2"))
         evaluation_delay = int(os.environ.get("GA_EVALUATION_DELAY", "2"))
         sla_latency_ms = float(os.environ.get("GA_SLA_LATENCY_MS", "2000.0"))
+        require_prometheus_metrics = os.environ.get("GA_REQUIRE_PROMETHEUS_METRICS", "false").lower() in ("1", "true", "yes")
         
         replicas_min = int(os.environ.get("GA_REPLICAS_MIN", "1"))
         replicas_max = int(os.environ.get("GA_REPLICAS_MAX", "6"))
@@ -85,6 +87,7 @@ class GAParameters:
             tournament_size=tournament_size,
             evaluation_delay=evaluation_delay,
             sla_latency_ms=sla_latency_ms,
+            require_prometheus_metrics=require_prometheus_metrics,
             replicas_bounds=(replicas_min, replicas_max),
             cpu_limit_bounds=(cpu_min, cpu_max),
             memory_limit_bounds=(mem_min, mem_max),

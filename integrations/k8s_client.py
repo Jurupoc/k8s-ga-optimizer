@@ -95,11 +95,6 @@ class KubernetesClient:
             app_config: Configuração da aplicação (default: carrega de env)
         """
         self.config = app_config or AppConfig.from_env()
-        self.dry_run = os.environ.get("GA_DRY_RUN", "false").lower() in (
-            "1",
-            "true",
-            "yes",
-        )
         self.rollout_timeout = int(os.environ.get("K8S_ROLLOUT_TIMEOUT", "120"))
         self.api_timeout = int(
             os.environ.get("K8S_API_TIMEOUT", "120")
@@ -362,9 +357,8 @@ class KubernetesClient:
                         replicas=spec.replicas or 1,
                         cpu_limit=cpu_cores,
                         memory_limit=mem_mb,
-                        container_name=container.name,
                     )
-                    log(f"Saved current config for rollback: {self._last_config}")
+                    log(f"Saved config for rollback")
                 except Exception as e:
                     log(
                         f"Failed to parse current config (cpu={cpu_str}, mem={mem_str}): {e}",
@@ -416,7 +410,7 @@ class KubernetesClient:
 
         cpu_m = f"{int(individual.cpu_limit * 1000)}m"
         mem = f"{int(individual.memory_limit)}Mi"
-        container_name = individual.container_name or self.config.container_name
+        container_name = self.config.container_name
 
         patch = {
             "spec": {
@@ -611,7 +605,7 @@ class KubernetesClient:
                 if status.unavailable_replicas and status.unavailable_replicas > 0:
                     log(
                         f"⚠️ {status.unavailable_replicas} pods unavailable",
-                        level="warning",
+                        level="debug",
                     )
 
             except ApiException as e:

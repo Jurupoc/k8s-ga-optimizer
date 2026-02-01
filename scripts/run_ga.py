@@ -58,7 +58,7 @@ def validate_environment(app_config: AppConfig) -> bool:
 
 
 def save_results(output_path: Path, optimizer: GeneticOptimizer, params: GAParameters,
-                 best: Optional[Any], execution_time: float, error: Optional[str] = None):
+                 best: Optional[any], execution_time: float, error: Optional[str] = None):
     """
     Salva resultados do GA (mesmo em caso de erro parcial).
 
@@ -71,6 +71,54 @@ def save_results(output_path: Path, optimizer: GeneticOptimizer, params: GAParam
         error: Mensagem de erro (se houver)
     """
     try:
+        # Organiza avaliações por geração
+        evaluations_by_generation = {}
+        evaluation_results = optimizer.get_evaluation_results()
+
+        # Agrupa avaliações por geração
+        # Assumindo que as avaliações estão em ordem e cada geração tem population_size avaliações
+        for idx, eval_result in enumerate(evaluation_results):
+            generation = idx // params.population_size
+            if generation not in evaluations_by_generation:
+                evaluations_by_generation[generation] = []
+            evaluations_by_generation[generation].append(eval_result)
+
+        # Cria estrutura detalhada de gerações
+        generations_detailed = []
+        for gen_stats in optimizer.get_history():
+            generation_num = gen_stats.generation
+
+            # Pega avaliações desta geração
+            gen_evaluations = evaluations_by_generation.get(generation_num, [])
+
+            # Cria lista de indivíduos com todas as informações
+            individuals_detail = []
+            for eval_result in gen_evaluations:
+                individual_info = {
+                    "individual": eval_result.individual.to_dict(),
+                    "fitness": eval_result.fitness,
+                    "evaluation_time_seconds": round(eval_result.evaluation_time, 2),
+                    "error": eval_result.error,
+                    "metrics": eval_result.metrics.to_dict() if eval_result.metrics else None,
+                }
+                individuals_detail.append(individual_info)
+
+            # Adiciona informações da geração
+            generation_info = {
+                "generation": generation_num,
+                "statistics": {
+                    "population_size": gen_stats.population_size,
+                    "avg_fitness": round(gen_stats.avg_fitness, 4),
+                    "max_fitness": round(gen_stats.max_fitness, 4),
+                    "min_fitness": round(gen_stats.min_fitness, 4),
+                    "diversity": round(gen_stats.diversity, 4),
+                    "convergence": round(gen_stats.convergence, 4),
+                },
+                "best_individual": gen_stats.best_individual.to_dict(),
+                "all_individuals": individuals_detail,
+            }
+            generations_detailed.append(generation_info)
+
         results = {
             "timestamp": datetime.now().isoformat(),
             "execution_time_seconds": round(execution_time, 2),
@@ -84,21 +132,35 @@ def save_results(output_path: Path, optimizer: GeneticOptimizer, params: GAParam
                     "crossover_rate": params.crossover_rate,
                     "elitism_count": params.elitism_count,
                     "tournament_size": params.tournament_size,
+                    "evaluation_delay": params.evaluation_delay,
+                    "sla_latency_ms": params.sla_latency_ms,
+                    "require_prometheus_metrics": params.require_prometheus_metrics,
                 },
                 "bounds": {
                     "replicas": params.replicas_bounds,
                     "cpu_limit": params.cpu_limit_bounds,
                     "memory_limit": params.memory_limit_bounds,
+                },
+                "load_test": {
+                    "duration": optimizer.load_tester.config.duration,
+                    "concurrency": optimizer.load_tester.config.concurrency,
+                    "timeout": optimizer.load_tester.config.timeout,
+                    "profile": optimizer.load_tester.config.profile,
+                    "warmup_duration": optimizer.load_tester.config.warmup_duration,
                 }
             },
-            "best_individual": best.to_dict() if best else None,
-            "evaluations": [r.to_dict() for r in optimizer.get_evaluation_results()],
-            "generations": [s.to_dict() for s in optimizer.get_history()],
-            "statistics": {
-                "total_evaluations": len(optimizer.get_evaluation_results()),
+            "best_individual_overall": best.to_dict() if best else None,
+            "generations": generations_detailed,
+            "summary": {
+                "total_evaluations": len(evaluation_results),
                 "completed_generations": len(optimizer.get_history()),
                 "cache_size": optimizer.cache.size(),
-                "failed_evaluations": sum(1 for r in optimizer.get_evaluation_results() if r.error),
+                "failed_evaluations": sum(1 for r in evaluation_results if r.error),
+                "successful_evaluations": sum(1 for r in evaluation_results if not r.error),
+                "total_evaluation_time_seconds": round(sum(r.evaluation_time for r in evaluation_results), 2),
+                "avg_evaluation_time_seconds": round(
+                    sum(r.evaluation_time for r in evaluation_results) / len(evaluation_results), 2
+                ) if evaluation_results else 0,
             }
         }
 

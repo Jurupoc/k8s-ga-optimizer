@@ -17,18 +17,14 @@ class Individual:
     replicas: int
     cpu_limit: float  # cores
     memory_limit: int  # MB
-    container_name: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Converte para dicionário."""
-        result = {
+        return {
             "replicas": self.replicas,
             "cpu_limit": self.cpu_limit,
             "memory_limit": self.memory_limit,
         }
-        if self.container_name:
-            result["container_name"] = self.container_name
-        return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Individual":
@@ -37,7 +33,6 @@ class Individual:
             replicas=int(data.get("replicas", 1)),
             cpu_limit=float(data.get("cpu_limit", 0.5)),
             memory_limit=int(data.get("memory_limit", 256)),
-            container_name=data.get("container_name"),
         )
 
     def __hash__(self):

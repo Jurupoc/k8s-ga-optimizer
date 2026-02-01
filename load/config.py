@@ -11,14 +11,13 @@ from dataclasses import dataclass
 class LoadTestConfig:
     """Configuração de load test."""
 
-    duration: int = 30  # seconds
+    duration: int = 90  # seconds
     concurrency: int = 20
     timeout: int = 5  # seconds
-    ramp_up: int = 0  # seconds
     profile: str = ""  # sustained, burst, ramp_up, spiky, wave (vazio = sem perfil)
     
     # Warm-up configuration
-    warmup_duration: int = 5  # seconds
+    warmup_duration: int = 10  # seconds
     warmup_concurrency: int = 2  # low concurrency during warm-up
     
     # Validation thresholds
@@ -28,12 +27,11 @@ class LoadTestConfig:
     @classmethod
     def from_env(cls) -> "LoadTestConfig":
         """Carrega configuração de variáveis de ambiente com validação."""
-        duration = int(os.environ.get("LOAD_TEST_DURATION", "30"))
+        duration = int(os.environ.get("LOAD_TEST_DURATION", "90"))
         concurrency = int(os.environ.get("LOAD_TEST_CONCURRENCY", "20"))
         timeout = int(os.environ.get("LOAD_TEST_TIMEOUT", "10"))
-        ramp_up = int(os.environ.get("LOAD_TEST_RAMP_UP", "0"))
         profile = os.environ.get("LOAD_TEST_PROFILE", "")
-        warmup_duration = int(os.environ.get("LOAD_TEST_WARMUP_DURATION", "5"))
+        warmup_duration = int(os.environ.get("LOAD_TEST_WARMUP_DURATION", "10"))
         warmup_concurrency = int(os.environ.get("LOAD_TEST_WARMUP_CONCURRENCY", "2"))
         min_requests = int(os.environ.get("LOAD_TEST_MIN_REQUESTS", "50"))
         max_error_rate = float(os.environ.get("LOAD_TEST_MAX_ERROR_RATE", "0.8"))
@@ -58,7 +56,6 @@ class LoadTestConfig:
             duration=duration,
             concurrency=concurrency,
             timeout=timeout,
-            ramp_up=ramp_up,
             profile=profile,
             warmup_duration=warmup_duration,
             warmup_concurrency=warmup_concurrency,

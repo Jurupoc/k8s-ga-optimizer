@@ -33,6 +33,8 @@ class LoadTestResult:
     success_rate: float = 0.0
     duration: float = 0.0
     latencies: List[float] = None
+    start_time: float = 0.0  # Unix timestamp do início do load test (sem warmup)
+    end_time: float = 0.0    # Unix timestamp do fim do load test
 
     def __post_init__(self):
         if self.latencies is None:
@@ -80,31 +82,31 @@ class LoadTestResult:
         self.total = self.success + self.fail
         self.success_rate = self.success / self.total if self.total > 0 else 0.0
         self.throughput = self.total / self.duration if self.duration > 0 else 0.0
-    
+
     def is_valid(self, min_requests: int = 50, max_error_rate: float = 0.8) -> tuple[bool, str]:
         """
         Valida se o resultado do load test é confiável.
-        
+
         Args:
             min_requests: Número mínimo de requisições
             max_error_rate: Taxa máxima de erro aceitável (0.0 - 1.0)
-        
+
         Returns:
             Tupla (is_valid, reason)
         """
         # Verifica se houve requisições suficientes
         if self.total < min_requests:
             return False, f"Too few requests: {self.total} < {min_requests}"
-        
+
         # Verifica taxa de erro
         error_rate = self.fail / self.total if self.total > 0 else 1.0
         if error_rate > max_error_rate:
             return False, f"High error rate: {error_rate:.1%} > {max_error_rate:.1%}"
-        
+
         # Verifica se houve alguma requisição bem-sucedida
         if self.success == 0:
             return False, "No successful requests"
-        
+
         return True, "OK"
 
 
@@ -162,6 +164,10 @@ class LoadTester:
         result = LoadTestResult()
         start_time = time.time()
         end_time = start_time + duration
+
+        # Salva timestamps no resultado
+        result.start_time = start_time
+        result.end_time = end_time
 
         # Lock para thread-safety
         lock = Lock()
@@ -248,7 +254,7 @@ class LoadTester:
 
         except Exception as e:
             raise LoadTestError(f"{phase_name.capitalize()} phase failed: {e}") from e
-    
+
     def run(
         self,
         url: str,
@@ -278,13 +284,13 @@ class LoadTester:
         duration = duration or self.config.duration
         timeout = timeout or self.config.timeout
         profile = profile or self.profile
-        
+
         # Determina concorrência
         if profile and not concurrency:
             concurrency = profile.max_concurrency
         else:
             concurrency = concurrency or self.config.concurrency
-        
+
         # Fase 1: Warm-up (opcional)
         if not skip_warmup and self.config.warmup_duration > 0:
             log(f"🔥 Starting warm-up phase ({self.config.warmup_duration}s with {self.config.warmup_concurrency} workers)...")
@@ -299,7 +305,7 @@ class LoadTester:
                 log(f"✅ Warm-up completed: {warmup_result.total} requests, {warmup_result.success_rate*100:.1f}% success")
             except Exception as e:
                 log(f"⚠️ Warm-up failed: {e}. Continuing with main test...", level="warning")
-        
+
         # Fase 2: Teste principal
         log(f"🚀 Starting main load test ({duration}s with {concurrency} workers)...")
         result = self._run_phase(
@@ -309,16 +315,16 @@ class LoadTester:
             timeout=timeout,
             phase_name="load test",
         )
-        
+
         # Validação
         is_valid, reason = result.is_valid(
             min_requests=self.config.min_requests,
             max_error_rate=self.config.max_error_rate,
         )
-        
+
         if not is_valid:
             log(f"⚠️ Load test validation failed: {reason}", level="warning")
         else:
             log(f"✅ Load test validation passed")
-        
+
         return result

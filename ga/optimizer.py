@@ -18,7 +18,7 @@ from ga.cache import EvaluationCache
 from integrations.prometheus_client import PrometheusClient
 from integrations.k8s_client import KubernetesClient
 from load.load_test import LoadTester
-from shared.utils import log
+from shared.utils import log, calculate_variance
 from ga.exceptions import GAException
 
 
@@ -57,6 +57,7 @@ class GeneticOptimizer:
             self.load_tester,
             self.app_config,
             self.fitness_calc,
+            require_prometheus_metrics=self.params.require_prometheus_metrics,
         )
         self.cache = EvaluationCache(ttl=3600.0)
 
@@ -130,7 +131,7 @@ class GeneticOptimizer:
         results = []
         for idx, individual in enumerate(population.individuals):
             log(
-                f"Evaluating individual {idx+1}/{len(population.individuals)}: {individual}"
+                f"Evaluating individual {idx+1}/{len(population.individuals)}"
             )
             result = self._evaluate_individual(individual)
             results.append(result)
@@ -146,7 +147,7 @@ class GeneticOptimizer:
         self, population: Population, results: List[EvaluationResult]
     ) -> GenerationStats:
         """
-        Calcula estatísticas da geração.
+        Calcula estatísticas da geração usando métodos da classe Population.
 
         Args:
             population: População
@@ -160,25 +161,21 @@ class GeneticOptimizer:
         if not fitness_scores:
             raise GAException("No fitness scores available")
 
+        # Estatísticas básicas de fitness
         avg_fitness = sum(fitness_scores) / len(fitness_scores)
         max_fitness = max(fitness_scores)
         min_fitness = min(fitness_scores)
 
-        # Melhor indivíduo
-        best_idx = max(range(len(fitness_scores)), key=lambda i: fitness_scores[i])
-        best_individual = results[best_idx].individual
+        # Melhor indivíduo usando método da Population
+        best_individual, best_score = population.get_best(fitness_scores)
 
-        # Diversidade
+        # Diversidade usando método da Population
         diversity = population.get_diversity()
 
-        # Convergência (variação dos scores)
-        if len(fitness_scores) > 1:
-            variance = sum((s - avg_fitness) ** 2 for s in fitness_scores) / len(
-                fitness_scores
-            )
-            convergence = 1.0 / (1.0 + variance)  # menor variância = maior convergência
-        else:
-            convergence = 0.0
+        # Convergência (variação dos scores) usando função utilitária
+        # Menor variância = maior convergência
+        variance = calculate_variance(fitness_scores)
+        convergence = 1.0 / (1.0 + variance)
 
         return GenerationStats(
             generation=population.generation,
@@ -215,7 +212,7 @@ class GeneticOptimizer:
 
         # Loop de gerações
         for gen in range(self.params.generations):
-            log(f"\n{'=' * 80}")
+            log(f"{'=' * 80}")
             log(f"Generation {population.generation + 1}/{self.params.generations}")
             log(f"{'=' * 80}")
 
@@ -227,22 +224,19 @@ class GeneticOptimizer:
             stats = self._calculate_generation_stats(population, results)
             self.history.append(stats)
 
-            # Atualiza melhor global
+            # Atualiza melhor global usando método da Population
             fitness_scores = [r.fitness for r in results]
-            current_best_idx = max(
-                range(len(fitness_scores)), key=lambda i: fitness_scores[i]
-            )
-            current_best = results[current_best_idx]
+            current_best_individual, current_best_fitness = population.get_best(fitness_scores)
 
-            if current_best.fitness > best_fitness:
-                best_fitness = current_best.fitness
-                best_individual = current_best.individual
+            if current_best_fitness > best_fitness:
+                best_fitness = current_best_fitness
+                best_individual = current_best_individual
                 log(
                     f"✨ New global best: {best_individual} (fitness: {best_fitness:.4f})"
                 )
 
             # Log estatísticas
-            log(f"Generation {stats.generation} statistics:")
+            log(f"Generation {stats.generation + 1} statistics:")
             log(f"  Average fitness: {stats.avg_fitness:.4f}")
             log(f"  Max fitness: {stats.max_fitness:.4f}")
             log(f"  Min fitness: {stats.min_fitness:.4f}")
@@ -251,7 +245,7 @@ class GeneticOptimizer:
             log(f"  Best individual: {stats.best_individual}")
 
             # Log detalhado de cada indivíduo com fitness
-            log(f"\nPopulation details (Generation {stats.generation}):")
+            log(f"Population details (Generation {stats.generation + 1}):")
             for idx, individual in enumerate(population.individuals):
                 fitness = fitness_scores[idx] if idx < len(fitness_scores) else 0.0
                 log(
@@ -264,6 +258,8 @@ class GeneticOptimizer:
             # Evolui para próxima geração
             if gen < self.params.generations - 1:  # Não evolui na última geração
                 population = self.pop_manager.evolve(population, fitness_scores)
+
+            log(f"{'=' * 80}")
 
         # Aplica melhor configuração
         if best_individual:

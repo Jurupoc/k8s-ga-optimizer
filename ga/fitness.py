@@ -275,6 +275,7 @@ class FitnessEvaluator:
         load_tester,
         app_config,
         fitness_calculator: Optional[FitnessCalculator] = None,
+        require_prometheus_metrics: bool = False,
     ):
         """
         Inicializa o avaliador.
@@ -285,12 +286,14 @@ class FitnessEvaluator:
             load_tester: Load tester
             app_config: Configuração da aplicação
             fitness_calculator: Calculador de fitness (default: cria novo)
+            require_prometheus_metrics: Se True, falha avaliação se métricas não disponíveis
         """
         self.prometheus = prometheus_client
         self.k8s = k8s_client
         self.load_tester = load_tester
         self.app_config = app_config
         self.calculator = fitness_calculator or FitnessCalculator()
+        self.require_prometheus_metrics = require_prometheus_metrics
 
     def evaluate(self, individual: Individual) -> tuple:
         """
@@ -326,28 +329,56 @@ class FitnessEvaluator:
             load_test_url = f"{self.app_config.url}/mixed"
             load_result = self.load_tester.run(load_test_url)
 
-            # 4. Coleta métricas do Prometheus
-            log(
-                f"Collecting metrics from Prometheus for {self.app_config.label}",
-                level="debug",
-            )
+            # 4. Coleta métricas do Prometheus usando timestamps do load test
+            log(f"📊 Collecting metrics from Prometheus for {self.app_config.label}...")
+            log(f"📊 Using time range: {load_result.start_time} to {load_result.end_time} ({load_result.duration:.2f}s)", level="debug")
+
             cpu_usage = self.prometheus.get_cpu_usage(
-                self.app_config.label, segundos=30
+                self.app_config.label,
+                start_time=load_result.start_time,
+                end_time=load_result.end_time
             )
             cpu_throttling = self.prometheus.get_cpu_throttling(
-                self.app_config.label, segundos=30
+                self.app_config.label,
+                start_time=load_result.start_time,
+                end_time=load_result.end_time
             )
             memory_usage = self.prometheus.get_memory_usage(
-                self.app_config.label, segundos=30
+                self.app_config.label,
+                start_time=load_result.start_time,
+                end_time=load_result.end_time
             )
             memory_peak_usage = self.prometheus.get_peak_memory_usage(
-                self.app_config.label, segundos=30
+                self.app_config.label,
+                start_time=load_result.start_time,
+                end_time=load_result.end_time
             )
 
             log(
-                f"Metrics collected: CPU={cpu_usage} CPU_THROTTLING={cpu_throttling}, MEMORY={memory_usage}, ,MEMORY_PEAK={memory_peak_usage}",
-                level="debug",
+                f"📊 Metrics collected: CPU={cpu_usage:.4f} cores, "
+                f"CPU_THROTTLING={cpu_throttling:.4f}, "
+                f"MEMORY={memory_usage / (1024*1024):.2f}MB, "
+                f"MEMORY_PEAK={memory_peak_usage / (1024*1024):.2f}MB"
             )
+
+            # Validação: Verifica se métricas são válidas
+            metrics_valid = cpu_usage > 0 or memory_usage > 0
+            if not metrics_valid:
+                log(
+                    "⚠️ WARNING: All Prometheus metrics returned 0.0! "
+                    "This may indicate that metrics are not available yet. "
+                    "Fitness calculation will be based only on load test results.",
+                    level="warning"
+                )
+
+                # Se configurado para requerer métricas, falha a avaliação
+                if self.require_prometheus_metrics:
+                    raise Exception(
+                        "Prometheus metrics are required but returned 0.0. "
+                        "Possible causes: pods not running, metrics not collected yet, "
+                        "or incorrect labels. Set GA_REQUIRE_PROMETHEUS_METRICS=false "
+                        "to allow evaluation without Prometheus metrics."
+                    )
 
             # 5. Constrói métricas
             metrics = FitnessMetrics(
