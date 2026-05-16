@@ -1,0 +1,25 @@
+# Inclui todas as dependências de runtime
+-r requirements.txt
+
+# Formatador
+black==26.1.0
+pathspec==1.0.4
+pytokens==0.4.1
+
+# Type checker
+mypy==1.19.1
+mypy_extensions==1.1.0
+
+# Language Server (suporte a IDEs)
+docstring-to-markdown==0.17
+jedi==0.19.2
+parso==0.8.5
+python-lsp-jsonrpc==1.1.2
+python-lsp-server==1.14.0
+pylsp-mypy==0.7.0
+
+# Testes
+pytest==8.3.4
+pytest-cov==6.0.0
+pluggy==1.6.0
+httmock==1.4.0

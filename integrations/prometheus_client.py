@@ -187,7 +187,7 @@ class PrometheusClient:
             log(f"Traceback: {traceback.format_exc()}", level="debug")
             return default
 
-    def _get_max_from_range(
+    def query_range_max(
         self,
         query: str,
         start_time: float,
@@ -196,7 +196,10 @@ class PrometheusClient:
         default: float = 0.0
     ) -> float:
         """
-        Executa query_range e retorna o MÁXIMO dos valores (não a média).
+        Executa um query_range e retorna o MÁXIMO dos valores (não a média).
+
+        Útil para métricas de pico (ex.: peak memory) onde a média subestima
+        a saturação real durante a janela observada.
 
         Args:
             query: Query PromQL
@@ -416,8 +419,7 @@ class PrometheusClient:
             # Usa query_range para obter máximo do período
             query = f'avg(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}})'
             # Para pico, queremos o máximo dos valores retornados, não a média
-            # Vamos usar uma abordagem diferente aqui
-            return self._get_max_from_range(query, start_time, end_time)
+            return self.query_range_max(query, start_time, end_time)
         else:
             # Fallback para query instantânea
             query = f'max_over_time(container_memory_working_set_bytes{{namespace="default", pod=~"{app_label}.*", container!="POD"}}[{segundos}s])'

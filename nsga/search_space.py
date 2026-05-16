@@ -3,6 +3,8 @@ Definição do espaço de busca para otimização de recursos.
 """
 from dataclasses import dataclass
 import random
+from typing import Any
+
 from nsga.domain import Genome
 
 
@@ -106,7 +108,7 @@ class SearchSpace:
         
         return True
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, int]:
         """Converte para dicionário."""
         return {
             "cpu_min": self.cpu_min,
@@ -120,7 +122,7 @@ class SearchSpace:
         }
     
     @classmethod
-    def from_dict(cls, data: dict) -> "SearchSpace":
+    def from_dict(cls, data: dict[str, Any]) -> "SearchSpace":
         """Cria SearchSpace a partir de dicionário."""
         return cls(**data)
     

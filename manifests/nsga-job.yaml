@@ -1,0 +1,103 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: nsga-optimizer
+  namespace: default
+spec:
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: ga-agent
+      containers:
+        - name: nsga-optimizer
+          image: nsga-optimizer:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: results
+              mountPath: /results
+          command: ["python", "-u", "scripts/run_nsga.py"]
+          env:
+            # ----- NSGA-II -----
+            - name: NSGA_POPULATION
+              value: "6"
+            - name: NSGA_GENERATIONS
+              value: "5"
+            - name: NSGA_CROSSOVER_RATE
+              value: "0.9"
+            - name: NSGA_MUTATION_RATE
+              value: "0.1"
+            - name: NSGA_SEED
+              value: "42"
+            - name: NSGA_STABILIZATION_S
+              value: "5"
+            - name: NSGA_OUTPUT_DIR
+              value: "/results/nsga"
+            - name: NSGA_MOCK
+              value: "false"
+
+            # ----- Search space (CPU em millicores, MEM em MiB) -----
+            - name: NSGA_CPU_MIN
+              value: "100"
+            - name: NSGA_CPU_MAX
+              value: "1800"
+            - name: NSGA_CPU_STEP
+              value: "100"
+            - name: NSGA_MEM_MIN
+              value: "128"
+            - name: NSGA_MEM_MAX
+              value: "1024"
+            - name: NSGA_MEM_STEP
+              value: "128"
+            - name: NSGA_REP_MIN
+              value: "1"
+            - name: NSGA_REP_MAX
+              value: "4"
+
+            # ----- Kubernetes / aplicação alvo -----
+            - name: K8S_DEPLOYMENT_NAME
+              value: "app-ga"
+            - name: K8S_NAMESPACE
+              value: "default"
+            - name: K8S_ROLLOUT_TIMEOUT
+              value: "240"
+            - name: APP_URL
+              value: "http://app-ga.default.svc.cluster.local:8080"
+            - name: APP_LABEL
+              value: "app-ga"
+
+            # ----- Load test -----
+            - name: LOAD_TEST_DURATION
+              value: "90"
+            - name: LOAD_TEST_CONCURRENCY
+              value: "20"
+            - name: LOAD_TEST_TIMEOUT
+              value: "10"
+            - name: LOAD_TEST_WARMUP_DURATION
+              value: "10"
+            - name: LOAD_TEST_WARMUP_CONCURRENCY
+              value: "2"
+            - name: LOAD_TEST_PROFILE
+              value: "default"
+            - name: LOAD_TEST_ENDPOINT
+              value: "/mixed"
+
+            # ----- Prometheus -----
+            - name: PROMETHEUS_URL
+              value: "http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+            - name: PROM_QUERY_TIMEOUT
+              value: "10"
+            - name: PROM_RETRY_ATTEMPTS
+              value: "3"
+            - name: PROM_RETRY_DELAY
+              value: "1.0"
+
+            # ----- Logging -----
+            - name: LOG_LEVEL
+              value: "INFO"
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: ga-results-pvc

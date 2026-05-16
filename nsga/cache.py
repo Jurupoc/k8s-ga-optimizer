@@ -4,50 +4,79 @@ Cache de avaliações em disco para evitar re-avaliações.
 import json
 import hashlib
 from pathlib import Path
-from typing import Optional
+from typing import Any
 from nsga.domain import Genome, EvaluationResult
 
 
 class EvaluationCache:
     """
     Cache simples em disco (JSONL) para resultados de avaliação.
-    
-    Chave: hash(genome + load_profile)
+
+    Chave: hash(genome + load_profile + load_params)
     Valor: EvaluationResult serializado
+
+    O `load_params` permite invalidar o cache automaticamente quando os
+    parâmetros do load test mudam (ex.: duration, concurrency, endpoint),
+    evitando reuso indevido de medições entre experimentos diferentes.
     """
-    
-    def __init__(self, cache_file: Path, load_profile: str = "default"):
+
+    def __init__(
+        self,
+        cache_file: Path,
+        load_profile: str = "default",
+        load_params: dict[str, Any] | None = None,
+    ):
         """
         Inicializa o cache.
-        
+
         Args:
             cache_file: Caminho do arquivo de cache (JSONL)
-            load_profile: Identificador do perfil de carga (para diferenciar experimentos)
+            load_profile: Identificador do perfil de carga (ex.: "burst", "sustained")
+            load_params: Parâmetros do load test que afetam as métricas medidas
+                (ex.: {"duration": 90, "concurrency": 20, "endpoint": "/mixed"}).
+                Se mudarem, a chave muda e medições antigas não dão hit.
         """
-        self.cache_file = cache_file
-        self.load_profile = load_profile
-        self.cache = {}
-        
+        self.cache_file: Path = cache_file
+        self.load_profile: str = load_profile
+        self.load_params: dict[str, Any] = dict(load_params) if load_params else {}
+        self.cache: dict[str, dict[str, Any]] = {}
+
+        # Pré-calcula a serialização estável dos parâmetros (ordem determinística)
+        self._params_signature: str = (
+            json.dumps(self.load_params, sort_keys=True, separators=(",", ":"))
+            if self.load_params
+            else ""
+        )
+
         # Criar diretório se não existir
         self.cache_file.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Carregar cache existente
         self._load()
-    
+
     def _make_key(self, genome: Genome) -> str:
         """
-        Cria chave de cache baseada no genome e perfil de carga.
-        
+        Cria chave de cache baseada no genome, perfil de carga e parâmetros do load test.
+
         Args:
             genome: Genome a ser usado como chave
-            
+
         Returns:
-            Hash string
+            Hash string (sha256 hex)
         """
-        key_data = f"{genome.cpu_m}:{genome.mem_mib}:{genome.replicas}:{self.load_profile}"
+        parts = [
+            str(genome.cpu_m),
+            str(genome.mem_mib),
+            str(genome.replicas),
+            self.load_profile,
+        ]
+        # Mantém compat com caches antigos: só adiciona o segmento extra se houver params
+        if self._params_signature:
+            parts.append(self._params_signature)
+        key_data = ":".join(parts)
         return hashlib.sha256(key_data.encode()).hexdigest()
     
-    def get(self, genome: Genome) -> Optional[EvaluationResult]:
+    def get(self, genome: Genome) -> EvaluationResult | None:
         """
         Busca resultado no cache.
         
@@ -81,10 +110,10 @@ class EvaluationCache:
             return
         
         try:
-            with open(self.cache_file, 'r') as f:
+            with open(self.cache_file, 'r', encoding='utf-8') as f:
                 for line in f:
                     if line.strip():
-                        entry = json.loads(line)
+                        entry: dict[str, Any] = json.loads(line)
                         key = entry['key']
                         self.cache[key] = entry['result']
         except Exception as e:
@@ -100,8 +129,8 @@ class EvaluationCache:
             result: Resultado a ser armazenado
         """
         try:
-            with open(self.cache_file, 'a') as f:
-                entry = {
+            with open(self.cache_file, 'a', encoding='utf-8') as f:
+                entry: dict[str, Any] = {
                     'key': key,
                     'result': result.to_dict()
                 }

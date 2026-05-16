@@ -4,9 +4,11 @@
 # Variáveis
 APP_NAME = app-ga
 GA_APP_NAME = ga-optimizer
+NSGA_APP_NAME = nsga-optimizer
 APP_IMAGE = $(APP_NAME):latest
 LOADTEST_IMAGE = $(APP_NAME)-loadtest:latest
 GA_IMAGE = $(GA_APP_NAME):latest
+NSGA_IMAGE = $(NSGA_APP_NAME):latest
 NAMESPACE = default
 MONITOR_NAMESPACE = monitoring
 LOADTEST_DURATION = 60
@@ -14,6 +16,7 @@ LOADTEST_CONCURRENCY = 20
 GA_OUTPUT = ga_results.json
 GA_CONFIG = ga_config.json
 GA_MANIFEST = manifests/ga-job.yaml
+NSGA_MANIFEST = manifests/nsga-job.yaml
 
 # Python e ambiente
 PYTHON = python
@@ -27,8 +30,8 @@ install:
 	pip install -r requirements.txt
 
 .PHONY: install-dev
-install-dev: install
-	pip install pytest pytest-cov black flake8 mypy
+install-dev:
+	pip install -r requirements-dev.txt
 
 .PHONY: venv
 venv:
@@ -85,7 +88,7 @@ run-ga:
 
 .PHONY: delete-ga
 delete-ga:
-	kubectl delete job $(GA_APP_NAME)
+	kubectl delete job $(GA_APP_NAME) --ignore-not-found=true
 
 .PHONY: logs-ga
 logs-ga:
@@ -94,9 +97,39 @@ logs-ga:
 .PHONY: ga
 ga:
 	minikube image build -f dockerfile.ga -t $(GA_IMAGE) .
-	kubectl delete job $(GA_APP_NAME)
+	kubectl delete job $(GA_APP_NAME) --ignore-not-found=true
 	kubectl apply -f $(GA_MANIFEST)
 	kubectl get pods -w
+
+# =====================================================
+# NSGA-II (multiobjetivo)
+# =====================================================
+.PHONY: build-nsga
+build-nsga:
+	minikube image build -f dockerfile.nsga -t $(NSGA_IMAGE) .
+
+.PHONY: run-nsga
+run-nsga:
+	kubectl apply -f $(NSGA_MANIFEST)
+
+.PHONY: delete-nsga
+delete-nsga:
+	kubectl delete job $(NSGA_APP_NAME) --ignore-not-found=true
+
+.PHONY: logs-nsga
+logs-nsga:
+	kubectl logs -f job/$(NSGA_APP_NAME)
+
+.PHONY: nsga
+nsga:
+	minikube image build -f dockerfile.nsga -t $(NSGA_IMAGE) .
+	kubectl delete job $(NSGA_APP_NAME) --ignore-not-found=true
+	kubectl apply -f $(NSGA_MANIFEST)
+	kubectl get pods -w
+
+.PHONY: run-nsga-local
+run-nsga-local:
+	$(PYTHON) -u scripts/run_nsga.py --mock --output-dir nsga_results
 
 # =====================================================
 # Exportação de Dados
@@ -154,12 +187,12 @@ test-ga:
 
 .PHONY: lint
 lint:
-	flake8 ga/ integrations/ load/ scripts/ app/ --max-line-length=120 --ignore=E501,W503 || true
-	mypy ga/ integrations/ load/ scripts/ app/ --ignore-missing-imports || true
+	flake8 ga/ nsga/ integrations/ load/ scripts/ app/ shared/ --max-line-length=120 --ignore=E501,W503 || true
+	mypy ga/ nsga/ integrations/ load/ scripts/ app/ shared/ --ignore-missing-imports || true
 
 .PHONY: format
 format:
-	black ga/ integrations/ load/ scripts/ app/ --line-length=120
+	black ga/ nsga/ integrations/ load/ scripts/ app/ shared/ --line-length=120
 
 .PHONY: check
 check: lint test
@@ -169,7 +202,7 @@ check: lint test
 # =====================================================
 .PHONY: shell
 shell:
-	$(PYTHON) -i -c "import sys; from pathlib import Path; sys.path.insert(0, str(Path.cwd())); from ga import *; from integrations import *; from load import *"
+	$(PYTHON) -i -c "import sys; from pathlib import Path; sys.path.insert(0, str(Path.cwd())); from ga import *; from nsga import *; from integrations import *; from load import *"
 
 .PHONY: clean-cache
 clean-cache:
@@ -187,8 +220,10 @@ clean: clean-cache clean-results
 	docker rmi -f $(APP_IMAGE) || true
 	docker rmi -f $(LOADTEST_IMAGE) || true
 	docker rmi -f $(GA_IMAGE) || true
+	docker rmi -f $(NSGA_IMAGE) || true
 	kubectl delete pod -l app=loadtest -n $(NAMESPACE) || true
-	kubectl delete job ga-optimizer -n $(NAMESPACE) || true
+	kubectl delete job ga-optimizer -n $(NAMESPACE) --ignore-not-found=true
+	kubectl delete job nsga-optimizer -n $(NAMESPACE) --ignore-not-found=true
 
 .PHONY: clean-all
 clean-all: clean
@@ -217,9 +252,20 @@ help:
 	@echo "  make run-load-test       - Executa load test no cluster"
 	@echo "  make run-load-test-local - Executa load test localmente"
 	@echo ""
-	@echo "Algoritmo Genetico:"
+	@echo "Algoritmo Genetico (mono-objetivo):"
 	@echo "  make build-ga          - Build da imagem Docker do GA"
-	@echo "  make logs-ga           - Logs do job GA (apos aplicar manifest)"
+	@echo "  make run-ga            - Aplica o manifest do GA"
+	@echo "  make delete-ga         - Remove o Job do GA"
+	@echo "  make logs-ga           - Logs do job GA"
+	@echo "  make ga                - Build + delete + apply + watch (atalho)"
+	@echo ""
+	@echo "NSGA-II (multiobjetivo):"
+	@echo "  make build-nsga        - Build da imagem Docker do NSGA-II"
+	@echo "  make run-nsga          - Aplica o manifest do NSGA-II"
+	@echo "  make delete-nsga       - Remove o Job do NSGA-II"
+	@echo "  make logs-nsga         - Logs do job NSGA-II"
+	@echo "  make nsga              - Build + delete + apply + watch (atalho)"
+	@echo "  make run-nsga-local    - Roda NSGA-II localmente com adapters mock"
 	@echo ""
 	@echo "Exportacao:"
 	@echo "  make export-csv        - Exporta resultados para CSV"

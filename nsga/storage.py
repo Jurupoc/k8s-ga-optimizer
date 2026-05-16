@@ -4,7 +4,7 @@ Persistência de resultados por geração.
 import json
 import csv
 from pathlib import Path
-from typing import List
+from typing import Any
 from nsga.domain import Individual
 from nsga.search_space import SearchSpace
 
@@ -25,7 +25,7 @@ class ExperimentStorage:
         Args:
             output_dir: Diretório de saída para resultados
         """
-        self.output_dir = output_dir
+        self.output_dir: Path = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
     
     def save_manifest(
@@ -37,7 +37,7 @@ class ExperimentStorage:
         search_space: SearchSpace,
         pc: float,
         pm: float,
-        **kwargs
+        **kwargs: Any,
     ) -> None:
         """
         Salva manifest com parâmetros do experimento.
@@ -52,7 +52,7 @@ class ExperimentStorage:
             pm: Probabilidade de mutação
             **kwargs: Outros parâmetros
         """
-        manifest = {
+        manifest: dict[str, Any] = {
             "pop_size": pop_size,
             "num_generations": num_generations,
             "seed": seed,
@@ -64,10 +64,10 @@ class ExperimentStorage:
         }
         
         manifest_file = self.output_dir / "manifest.json"
-        with open(manifest_file, 'w') as f:
+        with open(manifest_file, 'w', encoding='utf-8') as f:
             json.dump(manifest, f, indent=2)
     
-    def save_generation(self, generation: int, population: List[Individual]) -> None:
+    def save_generation(self, generation: int, population: list[Individual]) -> None:
         """
         Salva população de uma geração em CSV.
         
@@ -77,7 +77,7 @@ class ExperimentStorage:
         """
         csv_file = self.output_dir / f"generation_{generation:03d}.csv"
         
-        with open(csv_file, 'w', newline='') as f:
+        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             
             # Header
@@ -103,7 +103,7 @@ class ExperimentStorage:
                     ind.eval_result.eval_time_s if ind.eval_result else 0.0
                 ])
     
-    def save_pareto_front(self, generation: int, pareto_front: List[Individual]) -> None:
+    def save_pareto_front(self, generation: int, pareto_front: list[Individual]) -> None:
         """
         Salva frente de Pareto (rank 0) em arquivo separado.
         
@@ -113,7 +113,7 @@ class ExperimentStorage:
         """
         csv_file = self.output_dir / f"pareto_front_{generation:03d}.csv"
         
-        with open(csv_file, 'w', newline='') as f:
+        with open(csv_file, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             
             # Header
@@ -138,7 +138,7 @@ class ExperimentStorage:
                     ind.eval_result.eval_time_s if ind.eval_result else 0.0
                 ])
     
-    def save_summary(self, summary: dict) -> None:
+    def save_summary(self, summary: dict[str, Any]) -> None:
         """
         Salva resumo do experimento.
         
@@ -146,7 +146,7 @@ class ExperimentStorage:
             summary: Dicionário com estatísticas do experimento
         """
         summary_file = self.output_dir / "summary.json"
-        with open(summary_file, 'w') as f:
+        with open(summary_file, 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2)
     
     def append_log(self, message: str) -> None:
@@ -157,5 +157,5 @@ class ExperimentStorage:
             message: Mensagem a ser logada
         """
         log_file = self.output_dir / "experiment.log"
-        with open(log_file, 'a') as f:
+        with open(log_file, 'a', encoding='utf-8') as f:
             f.write(message + '\n')

@@ -3,6 +3,7 @@ Tipos e classes de domínio para o NSGA-II.
 """
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 class EvaluationStatus(Enum):
@@ -30,7 +31,7 @@ class Genome:
         """Hash para uso em cache."""
         return hash((self.cpu_m, self.mem_mib, self.replicas))
     
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Igualdade para comparação."""
         if not isinstance(other, Genome):
             return False
@@ -38,7 +39,7 @@ class Genome:
                 self.mem_mib == other.mem_mib and 
                 self.replicas == other.replicas)
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "cpu_m": self.cpu_m,
@@ -47,7 +48,7 @@ class Genome:
         }
     
     @classmethod
-    def from_dict(cls, data: dict) -> "Genome":
+    def from_dict(cls, data: dict[str, Any]) -> "Genome":
         """Cria Genome a partir de dicionário."""
         return cls(
             cpu_m=data["cpu_m"],
@@ -70,7 +71,7 @@ class RawMetrics:
     cpu_throttle_rate: float
     mem_peak_ratio: float
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "throughput_rps": self.throughput_rps,
@@ -79,7 +80,7 @@ class RawMetrics:
         }
     
     @classmethod
-    def from_dict(cls, data: dict) -> "RawMetrics":
+    def from_dict(cls, data: dict[str, Any]) -> "RawMetrics":
         """Cria RawMetrics a partir de dicionário."""
         return cls(
             throughput_rps=data["throughput_rps"],
@@ -102,12 +103,12 @@ class Objectives:
     f2: float  # recursos provisionados
     f3: float  # -throughput
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, float]:
         """Converte para dicionário."""
         return {"f1": self.f1, "f2": self.f2, "f3": self.f3}
     
     @classmethod
-    def from_dict(cls, data: dict) -> "Objectives":
+    def from_dict(cls, data: dict[str, float]) -> "Objectives":
         """Cria Objectives a partir de dicionário."""
         return cls(f1=data["f1"], f2=data["f2"], f3=data["f3"])
 
@@ -130,7 +131,7 @@ class EvaluationResult:
     objectives: Objectives
     eval_time_s: float
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "genome": self.genome.to_dict(),
@@ -141,7 +142,7 @@ class EvaluationResult:
         }
     
     @classmethod
-    def from_dict(cls, data: dict) -> "EvaluationResult":
+    def from_dict(cls, data: dict[str, Any]) -> "EvaluationResult":
         """Cria EvaluationResult a partir de dicionário."""
         return cls(
             genome=Genome.from_dict(data["genome"]),
@@ -187,7 +188,7 @@ class Individual:
         
         return better_in_any
     
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         """Converte para dicionário."""
         return {
             "genome": self.genome.to_dict(),

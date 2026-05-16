@@ -1,11 +1,16 @@
-# Genetic Algorithm–Based Resource Optimization in Kubernetes
+# Evolutionary Resource Optimization in Kubernetes
 
 This repository contains the full implementation and experimental setup for the undergraduate thesis:
 
 **"Application of Genetic Algorithms for Resource Optimization in Kubernetes Environments"**
 
-The project investigates the use of a **single-objective Genetic Algorithm (GA)** to automatically discover efficient Kubernetes cluster configurations—specifically **replica count, CPU limits, and memory limits**—for a given application workload.  
-The approach combines **load testing**, **Prometheus-based metrics**, and **direct interaction with the Kubernetes API** to evaluate and evolve configurations under realistic execution conditions.
+The project investigates evolutionary algorithms to automatically discover efficient Kubernetes cluster configurations — specifically **replica count, CPU limits, and memory limits** — for a given application workload.
+Two algorithms coexist in the repository:
+
+- **GA** (`ga/`) — original **single-objective** Genetic Algorithm that maximizes a weighted fitness score combining latency, resource efficiency, and reliability.
+- **NSGA-II** (`nsga/`) — **multi-objective** evolution that optimizes saturation, provisioned resources, and throughput simultaneously, returning a Pareto front of non-dominated configurations.
+
+Both share the same supporting infrastructure (Kubernetes adapter, Prometheus client, load tester) and run as Kubernetes Jobs against a real cluster.
 
 ---
 
@@ -13,19 +18,19 @@ The approach combines **load testing**, **Prometheus-based metrics**, and **dire
 
 Kubernetes provides automated deployment and scaling mechanisms for containerized applications, but **resource configuration is still commonly performed manually or via static rules**. This can lead to inefficient resource usage, performance degradation, or saturation under varying workloads.
 
-This project proposes a **Genetic Algorithm–driven optimization loop** that:
+This project proposes an **evolutionary optimization loop** that:
 
 1. **Applies** a candidate configuration to a running Kubernetes Deployment
 2. **Executes** a controlled load test against the application (90s duration + 10s warm-up)
 3. **Collects** performance and resource metrics from Prometheus (CPU, memory, throttling)
-4. **Computes** a fitness score based on throughput, latency, efficiency, and reliability
+4. **Computes** an objective score (single fitness for GA, three objectives for NSGA-II)
 5. **Evolves** the population toward improved configurations using tournament selection, crossover, and mutation
 
-The final configuration discovered by the GA is then **compared against a baseline setup** to evaluate its impact on performance and resource utilization.
+The final configuration (or Pareto front) discovered by the algorithm is then **compared against a baseline setup** to evaluate its impact on performance and resource utilization.
 
 ---
 
-## 🧬 Genetic Algorithm Summary
+## 🧬 Single-Objective GA (`ga/`)
 
 ### Algorithm Configuration
 
@@ -75,6 +80,61 @@ Weights are defined in `ga/fitness.py` (`FitnessWeights` class) and automaticall
 
 ---
 
+## 🎯 Multi-Objective NSGA-II (`nsga/`)
+
+### Algorithm Configuration
+
+- **Type:** NSGA-II (Deb et al., 2002) — non-dominated sorting + crowding distance
+- **Encoding:** integer-valued `Genome(cpu_m, mem_mib, replicas)` over a configurable `SearchSpace` with discrete steps
+- **Selection:** Binary tournament based on rank (Pareto front) and crowding distance
+- **Crossover:** Uniform crossover per gene (probability `pc`, default 0.9)
+- **Mutation:** Per-gene bounded mutation (probability `pm` per gene, default 0.1) with `repair()` clamping back into the search space
+- **Survival:** Elitist (P ∪ Q) → next generation by filling Pareto fronts in order, breaking ties on crowding distance
+- **Evaluation:** Real execution on Kubernetes via the same adapters (or synthetic mocks for offline runs)
+
+### Objectives (all minimized)
+
+| | Description | Formula |
+|---|---|---|
+| `f1` | Saturation — how pressured the pod is | `0.5 × cpu_throttle_rate + 0.5 × mem_peak_ratio` |
+| `f2` | Provisioned resource cost | `replicas × (w_cpu × cpu_cores + w_mem × mem_gib)` |
+| `f3` | Negative throughput (so minimization → maximize rps) | `-throughput_rps` |
+
+Weights for `f1` and `f2` are configurable via `SaturationWeights` and `ResourceWeights` in `nsga/objectives.py`. Defaults preserve a 1:1 trade-off and can be overridden when constructing the pipeline.
+
+Failed/timed-out evaluations get penalty objectives (`f1 = 10.0`, `f3 = 0.0`) so they are dominated by any real measurement.
+
+### Adapter Architecture
+
+The NSGA-II pipeline is decoupled from Kubernetes/Prometheus/Load testing through three small interfaces (`nsga/adapters/`):
+
+- `K8sAdapter` — applies a `Genome` to a Deployment and waits for rollout
+- `PrometheusAdapter` — collects `cpu_throttle_rate` and `mem_peak_ratio` over a time window
+- `LoadAdapter` — runs the load test, returns throughput, latency percentiles, and time bounds
+
+Each interface has a `Real*` implementation that delegates to the existing `integrations/` clients, plus a `Mock*` implementation that generates deterministic synthetic results — useful for unit tests and `make run-nsga-local` smoke runs without a cluster.
+
+### Output Format
+
+The runner writes to `NSGA_OUTPUT_DIR` (default `/results/nsga/`):
+
+```text
+nsga/
+├── manifest.json                # Experiment parameters (search space, pc, pm, load_params)
+├── generation_000.csv           # Full population per generation (with rank, crowding distance)
+├── generation_001.csv
+├── ...
+├── pareto_front_000.csv         # Rank-0 individuals only, per generation
+├── ...
+├── cache.jsonl                  # Persistent cache keyed by genome + load_profile + load_params
+├── summary.json                 # Cache stats, total time, final Pareto size
+└── experiment.log
+```
+
+The cache key includes `load_params` (duration, concurrency, endpoint, etc.), so changing any of them automatically invalidates stale measurements.
+
+---
+
 ## 🏗️ Repository Structure
 
 ```text
@@ -83,7 +143,7 @@ Weights are defined in `ga/fitness.py` (`FitnessWeights` class) and automaticall
 │   ├── main.py                 # FastAPI endpoints (/mixed, /health, /metrics)
 │   ├── metrics.py              # Prometheus metrics instrumentation
 │   └── __init__.py
-├── ga/                         # Genetic Algorithm implementation
+├── ga/                         # Single-objective Genetic Algorithm
 │   ├── optimizer.py            # Main GA orchestrator
 │   ├── fitness.py              # Fitness evaluation logic
 │   ├── population.py           # Population management (selection, crossover, mutation)
@@ -93,6 +153,21 @@ Weights are defined in `ga/fitness.py` (`FitnessWeights` class) and automaticall
 │   ├── types.py                # Core types (Individual, FitnessMetrics, EvaluationResult)
 │   └── tests/
 │       └── load_test.py        # Load test implementation for GA
+├── nsga/                       # Multi-objective NSGA-II
+│   ├── domain.py               # Genome, RawMetrics, Objectives, Individual
+│   ├── search_space.py         # Discrete search space + repair()
+│   ├── operators.py            # Uniform crossover + per-gene mutation
+│   ├── nsga2.py                # Fast non-dominated sort + crowding distance + selection
+│   ├── objectives.py           # f1/f2/f3 + ResourceWeights/SaturationWeights
+│   ├── evaluate.py             # EvaluatePipeline (apply → wait → load → prom → objectives)
+│   ├── cache.py                # JSONL cache keyed by genome + load_profile + load_params
+│   ├── storage.py              # Per-generation CSVs + Pareto front + summary
+│   ├── runner.py               # NSGA2Runner (generation loop, elitism)
+│   └── adapters/               # Decoupled K8s / Prometheus / Load adapters
+│       ├── k8s_adapter.py      # K8sAdapter + RealK8sAdapter
+│       ├── prometheus_adapter.py  # PrometheusAdapter + RealPrometheusAdapter
+│       ├── load_adapter.py     # LoadAdapter + Real/Mock implementations
+│       └── mock_adapters.py    # Synthetic K8s/Prom adapters for offline runs
 ├── load/                       # Load testing module
 │   ├── load_test.py            # LoadTester class with warm-up support
 │   ├── workload_profiles.py    # Workload patterns (sustained, burst, ramp-up, etc.)
@@ -101,20 +176,23 @@ Weights are defined in `ga/fitness.py` (`FitnessWeights` class) and automaticall
 │   └── main.py                 # Standalone load test entry point
 ├── integrations/               # External service integrations
 │   ├── k8s_client.py           # Kubernetes API client (apply, patch, scale, rollout)
-│   └── prometheus_client.py    # Prometheus query client (query_instant, query_range)
+│   └── prometheus_client.py    # Prometheus query client (query_instant, query_range, query_range_max)
 ├── shared/                     # Shared utilities
+│   ├── types.py                # GenericIndividual (used by adapters)
 │   └── utils.py                # Logging, parsing, validation helpers
 ├── manifests/                  # Kubernetes manifests
 │   ├── deployment-app-ga.yaml  # Application deployment
 │   ├── service-app-ga.yaml     # Application service
 │   ├── service-monitoring-app-ga.yaml  # ServiceMonitor for Prometheus
 │   ├── ga-job.yaml             # GA Job definition
+│   ├── nsga-job.yaml           # NSGA-II Job definition
 │   ├── job-loadtest.yaml       # Standalone load test job
-│   ├── service-account.yaml    # RBAC for GA Job
+│   ├── service-account.yaml    # RBAC for GA / NSGA Jobs
 │   ├── persistent-volume.yaml  # PV for results
 │   └── pvc-reader.yaml         # PVC reader pod
 ├── scripts/                    # Utility scripts
-│   ├── run_ga.py               # Main entry point for GA execution
+│   ├── run_ga.py               # Entry point for GA execution
+│   ├── run_nsga.py             # Entry point for NSGA-II execution (supports --mock)
 │   ├── export_metrics.py       # Export Prometheus metrics to JSON
 │   ├── test_*.py               # Various test scripts
 │   └── __init__.py
@@ -130,8 +208,10 @@ Weights are defined in `ga/fitness.py` (`FitnessWeights` class) and automaticall
 │   └── *.md                    # Various technical docs
 ├── dockerfile                  # Application container image
 ├── dockerfile.ga               # GA optimizer container image
+├── dockerfile.nsga             # NSGA-II optimizer container image
 ├── dockerfile.loadtest         # Load test container image
-├── requirements.txt            # Python dependencies
+├── requirements.txt            # Runtime Python dependencies
+├── requirements-dev.txt        # Dev dependencies (pytest, mypy, black, LSP)
 ├── Makefile                    # Build and deployment commands
 └── README.md
 ```
@@ -157,9 +237,15 @@ docker build -t app-ga:latest -f dockerfile .
 # Build GA optimizer image
 docker build -t ga-optimizer:latest -f dockerfile.ga .
 
+# Build NSGA-II optimizer image
+docker build -t nsga-optimizer:latest -f dockerfile.nsga .
+
 # Build load test image
 docker build -t loadtest:latest -f dockerfile.loadtest .
 ```
+
+> Tip: when using Minikube, the Makefile already wraps these commands —
+> `make build-api`, `make build-ga`, `make build-nsga`, etc.
 
 ### 2. Deploy Application
 
@@ -176,20 +262,34 @@ kubectl get pods -l app=app-ga
 kubectl get svc app-ga
 ```
 
-### 3. Run Genetic Algorithm
+### 3. Run an Optimizer
+
+Pick the algorithm you want to evaluate; both reuse the same Service Account and PVC.
+
+**Single-objective GA**:
 
 ```bash
-# Apply GA Job
-kubectl apply -f manifests/ga-job.yaml
+make run-ga                 # or: kubectl apply -f manifests/ga-job.yaml
+make logs-ga                # or: kubectl logs -f job/ga-optimizer
+```
 
-# Monitor execution
-kubectl logs -f job/ga-job
+**Multi-objective NSGA-II**:
 
-# Check results
-kubectl exec -it <pvc-reader-pod> -- cat /results/results.json
+```bash
+make run-nsga               # or: kubectl apply -f manifests/nsga-job.yaml
+make logs-nsga              # or: kubectl logs -f job/nsga-optimizer
+```
+
+**NSGA-II locally (no cluster, mock adapters)** — useful for smoke tests:
+
+```bash
+make run-nsga-local
+# equivalente a: python -u scripts/run_nsga.py --mock --output-dir nsga_results
 ```
 
 ### 4. Analyze Results
+
+**GA**:
 
 ```bash
 # Copy results from cluster
@@ -200,6 +300,19 @@ python results/analyze_ga_results.py results/results.json
 
 # View generated plots
 ls results/results_analysis/
+```
+
+**NSGA-II**:
+
+```bash
+# Copy the whole NSGA output directory
+kubectl cp <pvc-reader-pod>:/results/nsga ./nsga_results
+
+# Inspect the final Pareto front (last generation)
+ls nsga_results/pareto_front_*.csv | tail -1 | xargs cat
+
+# Aggregate stats
+cat nsga_results/summary.json
 ```
 
 ---
@@ -278,9 +391,37 @@ To modify weights, edit the `FitnessWeights` dataclass in `ga/fitness.py`.
 | `PROM_RETRY_ATTEMPTS` | `3` | Max query retry attempts |
 | `PROM_RETRY_DELAY` | `1.0` | Retry delay (seconds) |
 
+### NSGA-II Environment Variables
+
+The NSGA-II Job is configured via `manifests/nsga-job.yaml` and reuses the same `K8S_*`, `LOAD_TEST_*` and `PROMETHEUS_*` variables described above.
+Algorithm-specific variables (all prefixed with `NSGA_`):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NSGA_POPULATION` | `6` | Population size |
+| `NSGA_GENERATIONS` | `5` | Number of generations |
+| `NSGA_CROSSOVER_RATE` | `0.9` | Probability of crossover (`pc`) |
+| `NSGA_MUTATION_RATE` | `0.1` | Per-gene mutation probability (`pm`) |
+| `NSGA_SEED` | `42` | RNG seed (reproducibility) |
+| `NSGA_STABILIZATION_S` | `5` | Seconds to wait after rollout before load test |
+| `NSGA_OUTPUT_DIR` | `/results/nsga` | Output directory for CSVs and cache |
+| `NSGA_MOCK` | `false` | If `true`, uses synthetic adapters (no cluster needed) |
+
+Search space (CPU in millicores, memory in MiB):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NSGA_CPU_MIN` / `NSGA_CPU_MAX` / `NSGA_CPU_STEP` | `100` / `1800` / `100` | CPU bounds and discretization step |
+| `NSGA_MEM_MIN` / `NSGA_MEM_MAX` / `NSGA_MEM_STEP` | `128` / `1024` / `128` | Memory bounds and step |
+| `NSGA_REP_MIN` / `NSGA_REP_MAX` | `1` / `4` | Replica bounds |
+
+> Defaults differ slightly between manifests/files vs. `scripts/run_nsga.py` (the script defaults are wider). The Job manifest applies the conservative bounds; for ad-hoc local runs you can override anything via env vars or `--mock`.
+
 ---
 
 ## 📊 Results Format
+
+This section describes the **GA** (single-objective) result format. For NSGA-II, see the [Output Format](#output-format) under *Multi-Objective NSGA-II* — it produces per-generation CSVs and a Pareto front per generation rather than a single fitness leader.
 
 The GA execution generates a comprehensive JSON file with:
 
@@ -425,16 +566,22 @@ source .venv/bin/activate  # Linux/Mac
 # or
 .venv\Scripts\activate  # Windows
 
-# Install dependencies
+# Runtime dependencies only
 pip install -r requirements.txt
+
+# Or runtime + dev tools (pytest, mypy, black, LSP)
+pip install -r requirements-dev.txt
 
 # Run application locally
 uvicorn app.main:app --reload --port 8000
+
+# Smoke test of NSGA-II without a cluster
+python -u scripts/run_nsga.py --mock --output-dir nsga_results
 ```
 
 ### Code Structure
 
-#### Core Modules
+#### GA core modules
 
 - **`ga/optimizer.py`**: Main GA orchestrator
   - Initializes population
@@ -454,6 +601,17 @@ uvicorn app.main:app --reload --port 8000
   - Bounded mutation
   - Diversity calculation
 
+#### NSGA-II core modules
+
+- **`nsga/runner.py`**: Generation loop, elitism `P ∪ Q`, persistence per generation
+- **`nsga/nsga2.py`**: Fast non-dominated sort (O(M·N²)) + crowding distance + binary tournament
+- **`nsga/objectives.py`**: `f1`/`f2`/`f3` with configurable `SaturationWeights` / `ResourceWeights`
+- **`nsga/evaluate.py`**: `apply → wait → load → prom → objectives` pipeline with timeout/error handling
+- **`nsga/cache.py`**: JSONL cache keyed by genome + load profile + serialized load params
+- **`nsga/adapters/`**: Decoupling layer (Real* delegates to `integrations/`, Mock* for offline runs)
+
+#### Shared infrastructure
+
 - **`integrations/k8s_client.py`**: Kubernetes API
   - Apply/patch deployments
   - Scale replicas
@@ -461,10 +619,8 @@ uvicorn app.main:app --reload --port 8000
   - Cleanup pending pods
 
 - **`integrations/prometheus_client.py`**: Prometheus API
-  - Query instant metrics
-  - Query range metrics
-  - Retry logic
-  - Result caching
+  - `query_instant`, `query_range`, `query_range_max` (used for memory peak)
+  - Retry logic and caching
 
 - **`load/load_test.py`**: Load testing
   - Concurrent request execution

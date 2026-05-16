@@ -1,0 +1,37 @@
+# dockerfile.nsga
+# Imagem do otimizador NSGA-II.
+# IMPORTANTE: deve ser construído a partir do diretório raiz do projeto.
+# Exemplo: docker build -f dockerfile.nsga -t nsga-optimizer:latest .
+FROM python:3.13-slim
+
+WORKDIR /app
+
+# Módulo compartilhado (logging, types)
+COPY shared/ ./shared/
+
+# Integrações com sistemas externos (K8s, Prometheus)
+COPY integrations ./integrations
+
+# GA mono-objetivo é importado pelos adapters do NSGA (ex.: ga.config.PrometheusConfig)
+COPY ga ./ga
+
+# Núcleo do NSGA-II
+COPY nsga ./nsga
+
+# Load tester (usado pelos adapters)
+COPY load ./load
+
+# App de teste (importada por compat / não usada em runtime do NSGA, mas barata)
+COPY app ./app
+
+# Scripts de execução
+COPY scripts ./scripts
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+CMD ["python", "-u", "scripts/run_nsga.py"]

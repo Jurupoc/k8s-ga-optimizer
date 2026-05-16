@@ -3,9 +3,9 @@ Runner principal do experimento NSGA-II.
 """
 import random
 import time
-from pathlib import Path
-from typing import List, Optional
-from nsga.domain import Genome, Individual, Objectives
+from typing import Any
+
+from nsga.domain import Individual, Objectives
 from nsga.search_space import SearchSpace
 from nsga.evaluate import EvaluatePipeline
 from nsga.cache import EvaluationCache
@@ -70,7 +70,7 @@ class NSGA2Runner:
         self.cache_misses = 0
         self.total_eval_time = 0.0
     
-    def run(self) -> List[Individual]:
+    def run(self) -> list[Individual]:
         """
         Executa o experimento NSGA-II completo.
         
@@ -81,9 +81,11 @@ class NSGA2Runner:
         
         if self.verbose:
             print(f"Iniciando NSGA-II: pop={self.pop_size}, gen={self.num_generations}, seed={self.seed}")
-            print(f"SearchSpace: CPU [{self.search_space.cpu_min}:{self.search_space.cpu_max}:{self.search_space.cpu_step}], "
-                  f"MEM [{self.search_space.mem_min}:{self.search_space.mem_max}:{self.search_space.mem_step}], "
-                  f"REP [{self.search_space.rep_min}:{self.search_space.rep_max}]")
+            print(
+                f"SearchSpace: CPU [{self.search_space.cpu_min}:{self.search_space.cpu_max}:{self.search_space.cpu_step}], "
+                + f"MEM [{self.search_space.mem_min}:{self.search_space.mem_max}:{self.search_space.mem_step}], "
+                + f"REP [{self.search_space.rep_min}:{self.search_space.rep_max}]"
+            )
         
         # Gerar população inicial
         population = self._initialize_population()
@@ -131,7 +133,7 @@ class NSGA2Runner:
         
         # Salvar resumo
         total_time = time.time() - start_time
-        summary = {
+        summary: dict[str, Any] = {
             "total_time_s": total_time,
             "total_evaluations": self.cache_hits + self.cache_misses,
             "cache_hits": self.cache_hits,
@@ -152,14 +154,14 @@ class NSGA2Runner:
         
         return population
     
-    def _initialize_population(self) -> List[Individual]:
+    def _initialize_population(self) -> list[Individual]:
         """
         Gera população inicial aleatória.
         
         Returns:
             Lista de indivíduos (sem avaliação)
         """
-        population = []
+        population: list[Individual] = []
         for _ in range(self.pop_size):
             genome = self.search_space.random_genome(self.rng)
             # Criar indivíduo placeholder (será avaliado depois)
@@ -170,7 +172,7 @@ class NSGA2Runner:
             population.append(ind)
         return population
     
-    def _evaluate_population(self, population: List[Individual]) -> List[Individual]:
+    def _evaluate_population(self, population: list[Individual]) -> list[Individual]:
         """
         Avalia população usando cache quando possível.
         
@@ -180,7 +182,7 @@ class NSGA2Runner:
         Returns:
             Lista de indivíduos avaliados
         """
-        evaluated = []
+        evaluated: list[Individual] = []
         
         for ind in population:
             # Tentar buscar no cache
@@ -206,7 +208,7 @@ class NSGA2Runner:
         
         return evaluated
     
-    def _classify_population(self, population: List[Individual]) -> None:
+    def _classify_population(self, population: list[Individual]) -> None:
         """
         Classifica população (rank e crowding distance).
         
@@ -216,7 +218,7 @@ class NSGA2Runner:
         fronts = fast_non_dominated_sort(population)
         crowding_distance_assignment(fronts)
     
-    def _generate_offspring(self, population: List[Individual]) -> List[Individual]:
+    def _generate_offspring(self, population: list[Individual]) -> list[Individual]:
         """
         Gera offspring usando seleção, crossover e mutação.
         
@@ -226,7 +228,7 @@ class NSGA2Runner:
         Returns:
             Lista de offspring
         """
-        offspring = []
+        offspring: list[Individual] = []
         
         while len(offspring) < self.pop_size:
             # Seleção por torneio
@@ -259,7 +261,7 @@ class NSGA2Runner:
         
         return offspring[:self.pop_size]
     
-    def _print_generation_stats(self, generation: int, population: List[Individual]) -> None:
+    def _print_generation_stats(self, generation: int, population: list[Individual]) -> None:
         """
         Imprime estatísticas da geração.
         
