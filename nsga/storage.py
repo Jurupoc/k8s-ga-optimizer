@@ -148,14 +148,62 @@ class ExperimentStorage:
         summary_file = self.output_dir / "summary.json"
         with open(summary_file, 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2)
-    
-    def append_log(self, message: str) -> None:
+
+    EVALUATIONS_HEADER = [
+        "generation",
+        "idx",
+        "cpu_m",
+        "mem_mib",
+        "replicas",
+        "f1",
+        "f2",
+        "f3",
+        "throughput_rps",
+        "cpu_throttle_rate",
+        "mem_peak_ratio",
+        "rank",
+        "crowding_distance",
+        "status",
+        "eval_time_s",
+    ]
+
+    def save_evaluations(
+        self, generations: list[list[Individual]]
+    ) -> None:
         """
-        Adiciona mensagem ao log do experimento.
-        
+        Salva ``evaluations.csv`` em formato long: uma linha por indivíduo
+        em cada geração, com objetivos + métricas brutas + status.
+
         Args:
-            message: Mensagem a ser logada
+            generations: Lista de populações por geração (ordem cronológica).
+                Cada elemento é uma lista de ``Individual`` da geração N.
+
+        Schema alinhado conceitualmente com ``ga/storage.py``
+        (``EVALUATIONS_HEADER``) — mas usando os nomes nativos do NSGA-II
+        (``throughput_rps``, ``cpu_throttle_rate``, ``mem_peak_ratio``)
+        para preservar a semântica original das métricas.
         """
-        log_file = self.output_dir / "experiment.log"
-        with open(log_file, 'a', encoding='utf-8') as f:
-            f.write(message + '\n')
+        path = self.output_dir / "evaluations.csv"
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(self.EVALUATIONS_HEADER)
+            for gen, population in enumerate(generations):
+                for idx, ind in enumerate(population):
+                    raw = ind.eval_result.raw_metrics if ind.eval_result else None
+                    writer.writerow([
+                        gen,
+                        idx,
+                        ind.genome.cpu_m,
+                        ind.genome.mem_mib,
+                        ind.genome.replicas,
+                        ind.objectives.f1,
+                        ind.objectives.f2,
+                        ind.objectives.f3,
+                        raw.throughput_rps if raw else 0.0,
+                        raw.cpu_throttle_rate if raw else 0.0,
+                        raw.mem_peak_ratio if raw else 0.0,
+                        ind.rank,
+                        ind.crowding_distance,
+                        ind.eval_result.status.value if ind.eval_result else "unknown",
+                        ind.eval_result.eval_time_s if ind.eval_result else 0.0,
+                    ])

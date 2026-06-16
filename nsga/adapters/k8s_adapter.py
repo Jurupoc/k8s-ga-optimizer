@@ -68,12 +68,12 @@ class RealK8sAdapter(K8sAdapter):
     @override
     def apply_config(self, genome: Genome, deployment_name: str) -> bool:
         """Aplica configuração no K8s."""
-        from shared.types import GenericIndividual
+        from ga.types import Individual
 
-        individual = GenericIndividual(
+        individual = Individual(
+            replicas=genome.replicas,
             cpu_limit=genome.cpu_m / 1000,
             memory_limit=genome.mem_mib,
-            replicas=genome.replicas,
         )
         self.k8s.apply_configuration(individual, False)
         return True

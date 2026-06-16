@@ -4,8 +4,40 @@ Tipos de dados e modelos para o GA.
 """
 
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Dict, List, Optional, Any
 from datetime import datetime
+
+
+class EvaluationStatus(Enum):
+    """
+    Status de uma avaliação. Alinhado com ``nsga.domain.EvaluationStatus``
+    para permitir comparação direta entre algoritmos.
+
+    - ``OK``: avaliação completou e produziu métricas válidas.
+    - ``FAIL``: avaliação falhou (erro de K8s, Prometheus, validação, etc.).
+    - ``TIMEOUT``: rollout/load test não terminou dentro do prazo configurado.
+    """
+
+    OK = "ok"
+    FAIL = "fail"
+    TIMEOUT = "timeout"
+
+    @classmethod
+    def from_error(cls, error: Optional[str]) -> "EvaluationStatus":
+        """
+        Deriva o status a partir de uma mensagem de erro livre.
+
+        Heurística simples baseada em substrings comuns. Usada para manter
+        retrocompatibilidade com ``EvaluationResult.error`` (string) e para
+        recuperar status de cache files legados que não tinham o campo.
+        """
+        if error is None or error == "":
+            return cls.OK
+        lower = error.lower()
+        if "timeout" in lower or "timed out" in lower or "deadline" in lower:
+            return cls.TIMEOUT
+        return cls.FAIL
 
 
 @dataclass
@@ -94,6 +126,8 @@ class FitnessMetrics:
             "memory_usage": self.memory_usage,
             "cpu_utilization": self.cpu_utilization,
             "memory_utilization": self.memory_utilization,
+            "cpu_throttling": self.cpu_throttling,
+            "memory_peak_usage": self.memory_peak_usage,
             "request_rate": self.request_rate,
             "error_rate": self.error_rate,
             "evaluated_at": self.evaluated_at.isoformat(),
@@ -104,6 +138,16 @@ class FitnessMetrics:
 class EvaluationResult:
     """
     Resultado completo de uma avaliação.
+
+    O campo ``status`` é o canal primário para descobrir o resultado da
+    avaliação (alinhado com NSGA-II). O campo ``error`` continua existindo
+    para retrocompat e como mensagem livre de diagnóstico — mas a taxonomia
+    deve usar ``status``.
+
+    Se ``status`` não for fornecido explicitamente no construtor, é derivado
+    automaticamente de ``error`` via ``EvaluationStatus.from_error`` no
+    ``__post_init__``. Isso mantém código antigo que só seta ``error``
+    funcionando sem mudanças.
     """
 
     individual: Individual
@@ -111,6 +155,12 @@ class EvaluationResult:
     metrics: FitnessMetrics
     evaluation_time: float = 0.0  # seconds
     error: Optional[str] = None
+    generation: Optional[int] = None
+    status: Optional[EvaluationStatus] = None
+
+    def __post_init__(self) -> None:
+        if self.status is None:
+            self.status = EvaluationStatus.from_error(self.error)
 
     def to_dict(self) -> Dict[str, Any]:
         """Converte para dicionário."""
@@ -120,6 +170,8 @@ class EvaluationResult:
             "metrics": self.metrics.to_dict() if self.metrics else None,
             "evaluation_time": self.evaluation_time,
             "error": self.error,
+            "generation": self.generation,
+            "status": self.status.value if self.status else EvaluationStatus.OK.value,
         }
 
 

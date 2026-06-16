@@ -1,0 +1,3567 @@
+{
+  "timestamp": "2026-06-15T06:00:12.383920",
+  "execution_time_seconds": 16061.63,
+  "status": "success",
+  "error": null,
+  "config": {
+    "ga": {
+      "population_size": 12,
+      "generations": 8,
+      "mutation_rate": 0.3,
+      "crossover_rate": 0.8,
+      "elitism_count": 1,
+      "tournament_size": 2,
+      "seed": 44,
+      "evaluation_delay": 2,
+      "sla_latency_ms": 2000.0,
+      "require_prometheus_metrics": false
+    },
+    "bounds": {
+      "replicas": [
+        1,
+        4
+      ],
+      "cpu_limit": [
+        0.1,
+        0.7
+      ],
+      "memory_limit": [
+        128,
+        1024
+      ]
+    },
+    "app": {
+      "deployment_name": "app-ga",
+      "namespace": "default",
+      "url": "http://app-ga.default.svc.cluster.local:8080",
+      "label": "app-ga"
+    },
+    "load_test": {
+      "duration": 90,
+      "concurrency": 22,
+      "timeout": 10,
+      "profile": "default",
+      "warmup_duration": 15
+    }
+  },
+  "best_individual_overall": {
+    "replicas": 4,
+    "cpu_limit": 0.6,
+    "memory_limit": 256
+  },
+  "best_details_file": "best.json",
+  "generations": [
+    {
+      "generation": 0,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.638,
+        "max_fitness": 0.6714,
+        "min_fitness": 0.5108,
+        "diversity": 0.0808,
+        "convergence": 0.9976,
+        "objectives": {
+          "avg_f1": 0.5016,
+          "min_f1": 0.3238,
+          "avg_f2": 1.8229,
+          "min_f2": 0.675,
+          "avg_f3": -14.4329,
+          "min_f3": -37.5915
+        },
+        "metrics": {
+          "avg_throughput_rps": 14.43,
+          "max_throughput_rps": 37.59,
+          "avg_p95_latency_s": 3.6856,
+          "max_p95_latency_s": 9.4757,
+          "avg_cpu_throttle_rate": 0.7997
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6713786927611982,
+          "objectives": {
+            "f1": 0.4825386987713237,
+            "f2": 3.0,
+            "f3": -34.966477102829124
+          },
+          "evaluation_time_seconds": 339.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.966477102829124,
+            "avg_latency": 0.616843778979549,
+            "p95_latency": 1.414745569229126,
+            "p99_latency": 1.9619197845458984,
+            "success_rate": 1.0,
+            "total_requests": 3171,
+            "failed_requests": 0,
+            "cpu_usage": 0.2517759536683403,
+            "memory_usage": 69703972.57142857,
+            "cpu_utilization": 0.5035519073366806,
+            "memory_utilization": 0.2596675327845982,
+            "cpu_throttling": 0.6689653369957724,
+            "memory_peak_usage": 79486976.0,
+            "request_rate": 34.966477102829124,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:38:09.996285"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.4,
+            "memory_limit": 512
+          },
+          "fitness": 0.6521454797527598,
+          "objectives": {
+            "f1": 0.4634709613003865,
+            "f2": 1.8,
+            "f3": -14.260362520810643
+          },
+          "evaluation_time_seconds": 191.56,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 14.260362520810643,
+            "avg_latency": 1.5165901990897754,
+            "p95_latency": 2.8977952003479004,
+            "p99_latency": 2.9595401287078857,
+            "success_rate": 1.0,
+            "total_requests": 1315,
+            "failed_requests": 0,
+            "cpu_usage": 0.19083600883038396,
+            "memory_usage": 66470765.71428572,
+            "cpu_utilization": 0.47709002207595985,
+            "memory_utilization": 0.1238114493233817,
+            "cpu_throttling": 0.779145291741398,
+            "memory_peak_usage": 79347712.0,
+            "request_rate": 14.260362520810643,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:41:23.560309"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.1,
+            "memory_limit": 512
+          },
+          "fitness": 0.5108301858998798,
+          "objectives": {
+            "f1": 0.4820856452126958,
+            "f2": 1.7999999999999998,
+            "f3": -4.79996388497253
+          },
+          "evaluation_time_seconds": 286.84,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 4.79996388497253,
+            "avg_latency": 4.039760487497803,
+            "p95_latency": 8.692408800125122,
+            "p99_latency": 9.68901777267456,
+            "success_rate": 0.9400428265524625,
+            "total_requests": 467,
+            "failed_requests": 28,
+            "cpu_usage": 0.05683063569668022,
+            "memory_usage": 64131267.047619045,
+            "cpu_utilization": 0.5683063569668021,
+            "memory_utilization": 0.11945379348028273,
+            "cpu_throttling": 0.8192204237261729,
+            "memory_peak_usage": 77819904.0,
+            "request_rate": 4.79996388497253,
+            "error_rate": 0.059957173447537475,
+            "evaluated_at": "2026-06-15T01:46:12.402285"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.55,
+            "memory_limit": 128
+          },
+          "fitness": 0.6599974599290257,
+          "objectives": {
+            "f1": 0.7087037736261321,
+            "f2": 0.675,
+            "f3": -10.357786623578013
+          },
+          "evaluation_time_seconds": 176.19,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 10.357786623578013,
+            "avg_latency": 2.1075633761752,
+            "p95_latency": 2.1851720809936523,
+            "p99_latency": 2.29111909866333,
+            "success_rate": 1.0,
+            "total_requests": 948,
+            "failed_requests": 0,
+            "cpu_usage": 0.3272794617790777,
+            "memory_usage": 67592777.14285715,
+            "cpu_utilization": 0.5950535668710503,
+            "memory_utilization": 0.5036054338727679,
+            "cpu_throttling": 0.8383670199085141,
+            "memory_peak_usage": 77717504.0,
+            "request_rate": 10.357786623578013,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:49:10.595479"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.2,
+            "memory_limit": 640
+          },
+          "fitness": 0.554306318943508,
+          "objectives": {
+            "f1": 0.5105088287305383,
+            "f2": 0.825,
+            "f3": -3.6378930525440576
+          },
+          "evaluation_time_seconds": 204.52,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 3.6378930525440576,
+            "avg_latency": 6.091439316758012,
+            "p95_latency": 9.47571587562561,
+            "p99_latency": 11.425168752670288,
+            "success_rate": 0.9713467048710601,
+            "total_requests": 349,
+            "failed_requests": 10,
+            "cpu_usage": 0.1201708733123897,
+            "memory_usage": 66504411.428571425,
+            "cpu_utilization": 0.6008543665619485,
+            "memory_utilization": 0.09909929547991071,
+            "cpu_throttling": 0.9012300598048266,
+            "memory_peak_usage": 80388096.0,
+            "request_rate": 3.6378930525440576,
+            "error_rate": 0.02865329512893983,
+            "evaluated_at": "2026-06-15T01:52:37.118366"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 896
+          },
+          "fitness": 0.6698168671001574,
+          "objectives": {
+            "f1": 0.3238366665249642,
+            "f2": 5.7,
+            "f3": -37.591471070608826
+          },
+          "evaluation_time_seconds": 303.67,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 37.591471070608826,
+            "avg_latency": 0.5730537168079886,
+            "p95_latency": 1.6030552387237549,
+            "p99_latency": 2.0929043292999268,
+            "success_rate": 1.0,
+            "total_requests": 3405,
+            "failed_requests": 0,
+            "cpu_usage": 0.2761131409241128,
+            "memory_usage": 69270089.14285715,
+            "cpu_utilization": 0.502023892589296,
+            "memory_utilization": 0.07372891173070792,
+            "cpu_throttling": 0.5624944128490355,
+            "memory_peak_usage": 80027648.0,
+            "request_rate": 37.591471070608826,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:57:42.788954"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.35,
+            "memory_limit": 256
+          },
+          "fitness": 0.668671110890291,
+          "objectives": {
+            "f1": 0.5091454416378216,
+            "f2": 1.7999999999999998,
+            "f3": -19.049369225196553
+          },
+          "evaluation_time_seconds": 282.08,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 19.049369225196553,
+            "avg_latency": 1.1373664750816772,
+            "p95_latency": 2.5918891429901123,
+            "p99_latency": 3.09110689163208,
+            "success_rate": 1.0,
+            "total_requests": 1737,
+            "failed_requests": 0,
+            "cpu_usage": 0.19596529589147121,
+            "memory_usage": 65119378.28571428,
+            "cpu_utilization": 0.5599008454042035,
+            "memory_utilization": 0.24258858816964285,
+            "cpu_throttling": 0.7252458393303308,
+            "memory_peak_usage": 78663680.0,
+            "request_rate": 19.049369225196553,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:02:26.873688"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.3,
+            "memory_limit": 384
+          },
+          "fitness": 0.6616457956181816,
+          "objectives": {
+            "f1": 0.45918828970266684,
+            "f2": 2.0250000000000004,
+            "f3": -15.419412301107316
+          },
+          "evaluation_time_seconds": 245.05,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 15.419412301107316,
+            "avg_latency": 1.403489779212013,
+            "p95_latency": 3.557835102081299,
+            "p99_latency": 3.892530918121338,
+            "success_rate": 1.0,
+            "total_requests": 1414,
+            "failed_requests": 0,
+            "cpu_usage": 0.1578866252273625,
+            "memory_usage": 67430302.47619048,
+            "cpu_utilization": 0.526288750757875,
+            "memory_utilization": 0.1674649677579365,
+            "cpu_throttling": 0.7221485520615837,
+            "memory_peak_usage": 79011840.0,
+            "request_rate": 15.419412301107316,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:06:33.924357"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6576348819697013,
+          "objectives": {
+            "f1": 0.5831151040294258,
+            "f2": 0.75,
+            "f3": -9.391222428097173
+          },
+          "evaluation_time_seconds": 195.98,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 9.391222428097173,
+            "avg_latency": 2.3180917559398546,
+            "p95_latency": 2.400513172149658,
+            "p99_latency": 2.419813632965088,
+            "success_rate": 1.0,
+            "total_requests": 864,
+            "failed_requests": 0,
+            "cpu_usage": 0.31144433208951305,
+            "memory_usage": 63066697.14285714,
+            "cpu_utilization": 0.6228886641790261,
+            "memory_utilization": 0.23494175502232142,
+            "cpu_throttling": 0.8821725908713515,
+            "memory_peak_usage": 76251136.0,
+            "request_rate": 9.391222428097173,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:09:51.901341"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.3,
+            "memory_limit": 768
+          },
+          "fitness": 0.6524907056878851,
+          "objectives": {
+            "f1": 0.4723802468942219,
+            "f2": 1.05,
+            "f3": -5.678433233225877
+          },
+          "evaluation_time_seconds": 187.71,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 5.678433233225877,
+            "avg_latency": 3.8431492493875505,
+            "p95_latency": 3.9720044136047363,
+            "p99_latency": 3.9773454666137695,
+            "success_rate": 1.0,
+            "total_requests": 531,
+            "failed_requests": 0,
+            "cpu_usage": 0.17758269390521467,
+            "memory_usage": 65019904.0,
+            "cpu_utilization": 0.5919423130173822,
+            "memory_utilization": 0.08073933919270833,
+            "cpu_throttling": 0.8505527301165688,
+            "memory_peak_usage": 75866112.0,
+            "request_rate": 5.678433233225877,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:13:01.612828"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.6,
+            "memory_limit": 640
+          },
+          "fitness": 0.6495433556582048,
+          "objectives": {
+            "f1": 0.5289801255169329,
+            "f2": 1.225,
+            "f3": -11.43175389917364
+          },
+          "evaluation_time_seconds": 151.59,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 11.43175389917364,
+            "avg_latency": 1.9102705301294005,
+            "p95_latency": 1.9717309474945068,
+            "p99_latency": 1.9773588180541992,
+            "success_rate": 1.0,
+            "total_requests": 1035,
+            "failed_requests": 0,
+            "cpu_usage": 0.37078496392056665,
+            "memory_usage": 64774144.0,
+            "cpu_utilization": 0.6179749398676111,
+            "memory_utilization": 0.09652099609375,
+            "cpu_throttling": 0.9392407686119907,
+            "memory_peak_usage": 79671296.0,
+            "request_rate": 11.43175389917364,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:15:35.205862"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.35,
+            "memory_limit": 896
+          },
+          "fitness": 0.6479437923466156,
+          "objectives": {
+            "f1": 0.4949306357484002,
+            "f2": 1.225,
+            "f3": -6.6106224621523415
+          },
+          "evaluation_time_seconds": 196.59,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 6.6106224621523415,
+            "avg_latency": 3.289222929521329,
+            "p95_latency": 3.4640212059020996,
+            "p99_latency": 3.4828968048095703,
+            "success_rate": 1.0,
+            "total_requests": 601,
+            "failed_requests": 0,
+            "cpu_usage": 0.22169638756492094,
+            "memory_usage": 70052132.57142857,
+            "cpu_utilization": 0.6334182501854885,
+            "memory_utilization": 0.0745612942442602,
+            "cpu_throttling": 0.9074856088293897,
+            "memory_peak_usage": 77393920.0,
+            "request_rate": 6.6106224621523415,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:18:53.799420"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 1,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.6659,
+        "max_fitness": 0.6811,
+        "min_fitness": 0.6525,
+        "diversity": 0.0679,
+        "convergence": 0.9999,
+        "objectives": {
+          "avg_f1": 0.4676,
+          "min_f1": 0.34,
+          "avg_f2": 2.85,
+          "min_f2": 1.25,
+          "avg_f3": -26.268,
+          "min_f3": -49.041
+        },
+        "metrics": {
+          "avg_throughput_rps": 26.27,
+          "max_throughput_rps": 49.04,
+          "avg_p95_latency_s": 2.2264,
+          "max_p95_latency_s": 4.5216,
+          "avg_cpu_throttle_rate": 0.6903
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6713786927611982,
+          "objectives": {
+            "f1": 0.4825386987713237,
+            "f2": 3.0,
+            "f3": -34.966477102829124
+          },
+          "evaluation_time_seconds": 339.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.966477102829124,
+            "avg_latency": 0.616843778979549,
+            "p95_latency": 1.414745569229126,
+            "p99_latency": 1.9619197845458984,
+            "success_rate": 1.0,
+            "total_requests": 3171,
+            "failed_requests": 0,
+            "cpu_usage": 0.2517759536683403,
+            "memory_usage": 69703972.57142857,
+            "cpu_utilization": 0.5035519073366806,
+            "memory_utilization": 0.2596675327845982,
+            "cpu_throttling": 0.6689653369957724,
+            "memory_peak_usage": 79486976.0,
+            "request_rate": 34.966477102829124,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:38:09.996285"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.45,
+            "memory_limit": 1024
+          },
+          "fitness": 0.6524575995356086,
+          "objectives": {
+            "f1": 0.44372489597387815,
+            "f2": 1.45,
+            "f3": -8.737749705821354
+          },
+          "evaluation_time_seconds": 168.27,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 8.737749705821354,
+            "avg_latency": 2.4981578733936045,
+            "p95_latency": 2.649777889251709,
+            "p99_latency": 2.6694889068603516,
+            "success_rate": 1.0,
+            "total_requests": 795,
+            "failed_requests": 0,
+            "cpu_usage": 0.25749151642593404,
+            "memory_usage": 62502034.28571428,
+            "cpu_utilization": 0.572203369835409,
+            "memory_utilization": 0.05820955548967634,
+            "cpu_throttling": 0.8204446344770532,
+            "memory_peak_usage": 71946240.0,
+            "request_rate": 8.737749705821354,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:21:44.076416"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.25,
+            "memory_limit": 384
+          },
+          "fitness": 0.6569842606003196,
+          "objectives": {
+            "f1": 0.4971090369319466,
+            "f2": 1.25,
+            "f3": -8.941380604574919
+          },
+          "evaluation_time_seconds": 228.47,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 8.941380604574919,
+            "avg_latency": 2.4219474316796483,
+            "p95_latency": 4.5215723514556885,
+            "p99_latency": 4.669255256652832,
+            "success_rate": 1.0,
+            "total_requests": 827,
+            "failed_requests": 0,
+            "cpu_usage": 0.13741998495204372,
+            "memory_usage": 65955547.428571425,
+            "cpu_utilization": 0.5496799398081749,
+            "memory_utilization": 0.1638023739769345,
+            "cpu_throttling": 0.8018250888378515,
+            "memory_peak_usage": 77467648.0,
+            "request_rate": 8.941380604574919,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:25:34.551694"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.25,
+            "memory_limit": 256
+          },
+          "fitness": 0.6639202556423266,
+          "objectives": {
+            "f1": 0.49684901591931396,
+            "f2": 2.0,
+            "f3": -17.077105856403012
+          },
+          "evaluation_time_seconds": 269.01,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 17.077105856403012,
+            "avg_latency": 1.2655771101419344,
+            "p95_latency": 3.1844916343688965,
+            "p99_latency": 4.385312795639038,
+            "success_rate": 1.0,
+            "total_requests": 1566,
+            "failed_requests": 0,
+            "cpu_usage": 0.12002651735816809,
+            "memory_usage": 65214756.571428575,
+            "cpu_utilization": 0.48010606943267237,
+            "memory_utilization": 0.24294389997209823,
+            "cpu_throttling": 0.7002104830105029,
+            "memory_peak_usage": 78782464.0,
+            "request_rate": 17.077105856403012,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:30:05.562418"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.45,
+            "memory_limit": 896
+          },
+          "fitness": 0.6667643004625841,
+          "objectives": {
+            "f1": 0.3399939829214347,
+            "f2": 5.3,
+            "f3": -30.747622330729904
+          },
+          "evaluation_time_seconds": 319.67,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 30.747622330729904,
+            "avg_latency": 0.6999301604735546,
+            "p95_latency": 1.7128252983093262,
+            "p99_latency": 2.116168737411499,
+            "success_rate": 1.0,
+            "total_requests": 2808,
+            "failed_requests": 0,
+            "cpu_usage": 0.22959739741340318,
+            "memory_usage": 66397037.71428572,
+            "cpu_utilization": 0.5102164386964515,
+            "memory_utilization": 0.07067092584103954,
+            "cpu_throttling": 0.5965529072491194,
+            "memory_peak_usage": 78389248.0,
+            "request_rate": 30.747622330729904,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:35:27.235432"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.35,
+            "memory_limit": 256
+          },
+          "fitness": 0.668671110890291,
+          "objectives": {
+            "f1": 0.5091454416378216,
+            "f2": 1.7999999999999998,
+            "f3": -19.049369225196553
+          },
+          "evaluation_time_seconds": 282.08,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 19.049369225196553,
+            "avg_latency": 1.1373664750816772,
+            "p95_latency": 2.5918891429901123,
+            "p99_latency": 3.09110689163208,
+            "success_rate": 1.0,
+            "total_requests": 1737,
+            "failed_requests": 0,
+            "cpu_usage": 0.19596529589147121,
+            "memory_usage": 65119378.28571428,
+            "cpu_utilization": 0.5599008454042035,
+            "memory_utilization": 0.24258858816964285,
+            "cpu_throttling": 0.7252458393303308,
+            "memory_peak_usage": 78663680.0,
+            "request_rate": 19.049369225196553,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:02:26.873688"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.45,
+            "memory_limit": 256
+          },
+          "fitness": 0.6723565311656886,
+          "objectives": {
+            "f1": 0.4621878322935152,
+            "f2": 2.8,
+            "f3": -31.10617470418375
+          },
+          "evaluation_time_seconds": 265.87,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 31.10617470418375,
+            "avg_latency": 0.6936245562970237,
+            "p95_latency": 1.8397564888000488,
+            "p99_latency": 2.288177251815796,
+            "success_rate": 1.0,
+            "total_requests": 2821,
+            "failed_requests": 0,
+            "cpu_usage": 0.2182003488845418,
+            "memory_usage": 68170166.85714285,
+            "cpu_utilization": 0.4848896641878706,
+            "memory_utilization": 0.2539536612374442,
+            "cpu_throttling": 0.6305981987667179,
+            "memory_peak_usage": 78860288.0,
+            "request_rate": 31.10617470418375,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:39:57.108747"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.25,
+            "memory_limit": 128
+          },
+          "fitness": 0.6613377605310766,
+          "objectives": {
+            "f1": 0.6608701464792194,
+            "f2": 1.5,
+            "f3": -17.10924642188081
+          },
+          "evaluation_time_seconds": 283.12,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 17.10924642188081,
+            "avg_latency": 1.2616451132608628,
+            "p95_latency": 2.7868337631225586,
+            "p99_latency": 3.3981971740722656,
+            "success_rate": 1.0,
+            "total_requests": 1571,
+            "failed_requests": 0,
+            "cpu_usage": 0.12724705906666273,
+            "memory_usage": 66504996.571428575,
+            "cpu_utilization": 0.5089882362666509,
+            "memory_utilization": 0.49550083705357145,
+            "cpu_throttling": 0.7351924413959388,
+            "memory_peak_usage": 78725120.0,
+            "request_rate": 17.10924642188081,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:44:42.231202"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 640
+          },
+          "fitness": 0.6652143830817854,
+          "objectives": {
+            "f1": 0.3765551137396074,
+            "f2": 4.7,
+            "f3": -39.014575032378275
+          },
+          "evaluation_time_seconds": 303.73,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 39.014575032378275,
+            "avg_latency": 0.5501468132624584,
+            "p95_latency": 1.3983781337738037,
+            "p99_latency": 1.7655749320983887,
+            "success_rate": 1.0,
+            "total_requests": 3553,
+            "failed_requests": 0,
+            "cpu_usage": 0.27340544306017633,
+            "memory_usage": 67191808.0,
+            "cpu_utilization": 0.4971008055639569,
+            "memory_utilization": 0.10012359619140625,
+            "cpu_throttling": 0.6338292216198399,
+            "memory_peak_usage": 80048128.0,
+            "request_rate": 39.014575032378275,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:49:47.956172"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.6811433756774398,
+          "objectives": {
+            "f1": 0.43879126556108333,
+            "f2": 3.8,
+            "f3": -49.041044377637476
+          },
+          "evaluation_time_seconds": 247.86,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.041044377637476,
+            "avg_latency": 0.43734107480361284,
+            "p95_latency": 1.1677823066711426,
+            "p99_latency": 1.4623217582702637,
+            "success_rate": 1.0,
+            "total_requests": 4430,
+            "failed_requests": 0,
+            "cpu_usage": 0.3558659337920245,
+            "memory_usage": 68402176.0,
+            "cpu_utilization": 0.5083799054171779,
+            "memory_utilization": 0.2548179626464844,
+            "cpu_throttling": 0.5803718377627917,
+            "memory_peak_usage": 79781888.0,
+            "request_rate": 49.041044377637476,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:53:57.819397"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.45,
+            "memory_limit": 256
+          },
+          "fitness": 0.6686469545540725,
+          "objectives": {
+            "f1": 0.5140516163166141,
+            "f2": 2.0999999999999996,
+            "f3": -24.62655404810293
+          },
+          "evaluation_time_seconds": 262.67,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 24.62655404810293,
+            "avg_latency": 0.8772908488519483,
+            "p95_latency": 1.9060578346252441,
+            "p99_latency": 2.3528122901916504,
+            "success_rate": 1.0,
+            "total_requests": 2242,
+            "failed_requests": 0,
+            "cpu_usage": 0.2486655155492211,
+            "memory_usage": 66261772.19047619,
+            "cpu_utilization": 0.5525900345538246,
+            "memory_utilization": 0.2468443371000744,
+            "cpu_throttling": 0.7311824562660407,
+            "memory_peak_usage": 79704064.0,
+            "request_rate": 24.62655404810293,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:58:22.488104"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 640
+          },
+          "fitness": 0.6622625581923427,
+          "objectives": {
+            "f1": 0.3889014554083456,
+            "f2": 4.5,
+            "f3": -34.79820432786992
+          },
+          "evaluation_time_seconds": 334.14,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.79820432786992,
+            "avg_latency": 0.6198608822309566,
+            "p95_latency": 1.543043613433838,
+            "p99_latency": 1.9665610790252686,
+            "success_rate": 1.0,
+            "total_requests": 3151,
+            "failed_requests": 0,
+            "cpu_usage": 0.24525798135326854,
+            "memory_usage": 66553709.71428572,
+            "cpu_utilization": 0.4905159627065371,
+            "memory_utilization": 0.0991727556501116,
+            "cpu_throttling": 0.6593702936291912,
+            "memory_peak_usage": 79478784.0,
+            "request_rate": 34.79820432786992,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:03:58.631742"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 2,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.6528,
+        "max_fitness": 0.6859,
+        "min_fitness": 0.4389,
+        "diversity": 0.0347,
+        "convergence": 0.9958,
+        "objectives": {
+          "avg_f1": 0.4818,
+          "min_f1": 0.3022,
+          "avg_f2": 2.7896,
+          "min_f2": 1.2,
+          "avg_f3": -29.9095,
+          "min_f3": -49.1869
+        },
+        "metrics": {
+          "avg_throughput_rps": 29.91,
+          "max_throughput_rps": 49.19,
+          "avg_p95_latency_s": 2.7431,
+          "max_p95_latency_s": 11.1541,
+          "avg_cpu_throttle_rate": 0.6642
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.6811433756774398,
+          "objectives": {
+            "f1": 0.43879126556108333,
+            "f2": 3.8,
+            "f3": -49.041044377637476
+          },
+          "evaluation_time_seconds": 247.86,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.041044377637476,
+            "avg_latency": 0.43734107480361284,
+            "p95_latency": 1.1677823066711426,
+            "p99_latency": 1.4623217582702637,
+            "success_rate": 1.0,
+            "total_requests": 4430,
+            "failed_requests": 0,
+            "cpu_usage": 0.3558659337920245,
+            "memory_usage": 68402176.0,
+            "cpu_utilization": 0.5083799054171779,
+            "memory_utilization": 0.2548179626464844,
+            "cpu_throttling": 0.5803718377627917,
+            "memory_peak_usage": 79781888.0,
+            "request_rate": 49.041044377637476,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:53:57.819397"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.65,
+            "memory_limit": 768
+          },
+          "fitness": 0.6647806213700136,
+          "objectives": {
+            "f1": 0.3704755881630363,
+            "f2": 4.199999999999999,
+            "f3": -34.21835564196554
+          },
+          "evaluation_time_seconds": 246.59,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.21835564196554,
+            "avg_latency": 0.6295270464022186,
+            "p95_latency": 1.6113178730010986,
+            "p99_latency": 1.7534756660461426,
+            "success_rate": 1.0,
+            "total_requests": 3102,
+            "failed_requests": 0,
+            "cpu_usage": 0.3366687222372803,
+            "memory_usage": 64863085.71428572,
+            "cpu_utilization": 0.5179518803650466,
+            "memory_utilization": 0.08054460797991071,
+            "cpu_throttling": 0.641967411677635,
+            "memory_peak_usage": 79712256.0,
+            "request_rate": 34.21835564196554,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:08:07.220027"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.1,
+            "memory_limit": 512
+          },
+          "fitness": 0.43894835070426225,
+          "objectives": {
+            "f1": 0.4933865859014887,
+            "f2": 1.2,
+            "f3": -3.0528755409624577
+          },
+          "evaluation_time_seconds": 232.28,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 3.0528755409624577,
+            "avg_latency": 6.083933056394259,
+            "p95_latency": 11.154099464416504,
+            "p99_latency": 13.288891315460205,
+            "success_rate": 0.7973421926910299,
+            "total_requests": 301,
+            "failed_requests": 61,
+            "cpu_usage": 0.05394200043347509,
+            "memory_usage": 61128704.0,
+            "cpu_utilization": 0.5394200043347509,
+            "memory_utilization": 0.113861083984375,
+            "cpu_throttling": 0.8430277494396962,
+            "memory_peak_usage": 77172736.0,
+            "request_rate": 3.0528755409624577,
+            "error_rate": 0.2026578073089701,
+            "evaluated_at": "2026-06-15T03:12:01.501068"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.45,
+            "memory_limit": 256
+          },
+          "fitness": 0.6686469545540725,
+          "objectives": {
+            "f1": 0.5140516163166141,
+            "f2": 2.0999999999999996,
+            "f3": -24.62655404810293
+          },
+          "evaluation_time_seconds": 262.67,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 24.62655404810293,
+            "avg_latency": 0.8772908488519483,
+            "p95_latency": 1.9060578346252441,
+            "p99_latency": 2.3528122901916504,
+            "success_rate": 1.0,
+            "total_requests": 2242,
+            "failed_requests": 0,
+            "cpu_usage": 0.2486655155492211,
+            "memory_usage": 66261772.19047619,
+            "cpu_utilization": 0.5525900345538246,
+            "memory_utilization": 0.2468443371000744,
+            "cpu_throttling": 0.7311824562660407,
+            "memory_peak_usage": 79704064.0,
+            "request_rate": 24.62655404810293,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:58:22.488104"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 640
+          },
+          "fitness": 0.6801096919736116,
+          "objectives": {
+            "f1": 0.3021679143538116,
+            "f2": 5.3,
+            "f3": -49.18688790817942
+          },
+          "evaluation_time_seconds": 282.55,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.18688790817942,
+            "avg_latency": 0.43568942997327575,
+            "p95_latency": 1.1747517585754395,
+            "p99_latency": 1.455143928527832,
+            "success_rate": 1.0,
+            "total_requests": 4451,
+            "failed_requests": 0,
+            "cpu_usage": 0.3451306603826292,
+            "memory_usage": 66212425.14285714,
+            "cpu_utilization": 0.4930438005466132,
+            "memory_utilization": 0.09866420200892857,
+            "cpu_throttling": 0.48485951034824815,
+            "memory_peak_usage": 80179200.0,
+            "request_rate": 49.18688790817942,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:16:48.052287"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.4,
+            "memory_limit": 128
+          },
+          "fitness": 0.6677416491797996,
+          "objectives": {
+            "f1": 0.6680835653640345,
+            "f2": 1.5750000000000002,
+            "f3": -22.592490370804217
+          },
+          "evaluation_time_seconds": 308.5,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 22.592490370804217,
+            "avg_latency": 0.9565434816621323,
+            "p95_latency": 2.014662981033325,
+            "p99_latency": 2.4995760917663574,
+            "success_rate": 1.0,
+            "total_requests": 2062,
+            "failed_requests": 0,
+            "cpu_usage": 0.23178786029008677,
+            "memory_usage": 69395017.14285715,
+            "cpu_utilization": 0.579469650725217,
+            "memory_utilization": 0.5170331682477679,
+            "cpu_throttling": 0.7455909588530689,
+            "memory_peak_usage": 79265792.0,
+            "request_rate": 22.592490370804217,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:21:58.552766"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 128
+          },
+          "fitness": 0.6723790331415542,
+          "objectives": {
+            "f1": 0.598532875466703,
+            "f2": 2.7,
+            "f3": -38.64152219522411
+          },
+          "evaluation_time_seconds": 263.3,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 38.64152219522411,
+            "avg_latency": 0.5562704893467606,
+            "p95_latency": 1.4420926570892334,
+            "p99_latency": 1.9338438510894775,
+            "success_rate": 1.0,
+            "total_requests": 3515,
+            "failed_requests": 0,
+            "cpu_usage": 0.2802205338436264,
+            "memory_usage": 66187556.571428575,
+            "cpu_utilization": 0.5094918797156843,
+            "memory_utilization": 0.49313572474888395,
+            "cpu_throttling": 0.6252884071834058,
+            "memory_peak_usage": 76742656.0,
+            "request_rate": 38.64152219522411,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:26:23.850398"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.685909381651712,
+          "objectives": {
+            "f1": 0.4223296630431846,
+            "f2": 3.4,
+            "f3": -42.3215858481648
+          },
+          "evaluation_time_seconds": 338.54,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.3215858481648,
+            "avg_latency": 0.5070733349137967,
+            "p95_latency": 1.2952523231506348,
+            "p99_latency": 1.5983304977416992,
+            "success_rate": 1.0,
+            "total_requests": 3847,
+            "failed_requests": 0,
+            "cpu_usage": 0.31812919823291097,
+            "memory_usage": 66847158.85714286,
+            "cpu_utilization": 0.530215330388185,
+            "memory_utilization": 0.2490250723702567,
+            "cpu_throttling": 0.5473113036254317,
+            "memory_peak_usage": 79818752.0,
+            "request_rate": 42.3215858481648,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:32:04.387251"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.15,
+            "memory_limit": 256
+          },
+          "fitness": 0.6611587819972231,
+          "objectives": {
+            "f1": 0.5203294357416925,
+            "f2": 1.6,
+            "f3": -10.110820195571417
+          },
+          "evaluation_time_seconds": 260.43,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 10.110820195571417,
+            "avg_latency": 2.1165106371356854,
+            "p95_latency": 5.305353879928589,
+            "p99_latency": 6.798029899597168,
+            "success_rate": 1.0,
+            "total_requests": 956,
+            "failed_requests": 0,
+            "cpu_usage": 0.07610439630528797,
+            "memory_usage": 63381065.14285714,
+            "cpu_utilization": 0.5073626420352532,
+            "memory_utilization": 0.2361128670828683,
+            "cpu_throttling": 0.7459963958974475,
+            "memory_peak_usage": 79097856.0,
+            "request_rate": 10.110820195571417,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:36:26.819111"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6713786927611982,
+          "objectives": {
+            "f1": 0.4825386987713237,
+            "f2": 3.0,
+            "f3": -34.966477102829124
+          },
+          "evaluation_time_seconds": 339.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.966477102829124,
+            "avg_latency": 0.616843778979549,
+            "p95_latency": 1.414745569229126,
+            "p99_latency": 1.9619197845458984,
+            "success_rate": 1.0,
+            "total_requests": 3171,
+            "failed_requests": 0,
+            "cpu_usage": 0.2517759536683403,
+            "memory_usage": 69703972.57142857,
+            "cpu_utilization": 0.5035519073366806,
+            "memory_utilization": 0.2596675327845982,
+            "cpu_throttling": 0.6689653369957724,
+            "memory_peak_usage": 79486976.0,
+            "request_rate": 34.966477102829124,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:38:09.996285"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.35,
+            "memory_limit": 256
+          },
+          "fitness": 0.668671110890291,
+          "objectives": {
+            "f1": 0.5091454416378216,
+            "f2": 1.7999999999999998,
+            "f3": -19.049369225196553
+          },
+          "evaluation_time_seconds": 282.08,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 19.049369225196553,
+            "avg_latency": 1.1373664750816772,
+            "p95_latency": 2.5918891429901123,
+            "p99_latency": 3.09110689163208,
+            "success_rate": 1.0,
+            "total_requests": 1737,
+            "failed_requests": 0,
+            "cpu_usage": 0.19596529589147121,
+            "memory_usage": 65119378.28571428,
+            "cpu_utilization": 0.5599008454042035,
+            "memory_utilization": 0.24258858816964285,
+            "cpu_throttling": 0.7252458393303308,
+            "memory_peak_usage": 78663680.0,
+            "request_rate": 19.049369225196553,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:02:26.873688"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.45,
+            "memory_limit": 256
+          },
+          "fitness": 0.6723565311656886,
+          "objectives": {
+            "f1": 0.4621878322935152,
+            "f2": 2.8,
+            "f3": -31.10617470418375
+          },
+          "evaluation_time_seconds": 265.87,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 31.10617470418375,
+            "avg_latency": 0.6936245562970237,
+            "p95_latency": 1.8397564888000488,
+            "p99_latency": 2.288177251815796,
+            "success_rate": 1.0,
+            "total_requests": 2821,
+            "failed_requests": 0,
+            "cpu_usage": 0.2182003488845418,
+            "memory_usage": 68170166.85714285,
+            "cpu_utilization": 0.4848896641878706,
+            "memory_utilization": 0.2539536612374442,
+            "cpu_throttling": 0.6305981987667179,
+            "memory_peak_usage": 78860288.0,
+            "request_rate": 31.10617470418375,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:39:57.108747"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 3,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.6496,
+        "max_fitness": 0.6859,
+        "min_fitness": 0.4024,
+        "diversity": 0.0693,
+        "convergence": 0.9944,
+        "objectives": {
+          "avg_f1": 0.4766,
+          "min_f1": 0.367,
+          "avg_f2": 2.925,
+          "min_f2": 0.6,
+          "avg_f3": -33.3514,
+          "min_f3": -46.808
+        },
+        "metrics": {
+          "avg_throughput_rps": 33.35,
+          "max_throughput_rps": 46.81,
+          "avg_p95_latency_s": 2.1702,
+          "max_p95_latency_s": 7.6065,
+          "avg_cpu_throttle_rate": 0.6473
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.685909381651712,
+          "objectives": {
+            "f1": 0.4223296630431846,
+            "f2": 3.4,
+            "f3": -42.3215858481648
+          },
+          "evaluation_time_seconds": 338.54,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.3215858481648,
+            "avg_latency": 0.5070733349137967,
+            "p95_latency": 1.2952523231506348,
+            "p99_latency": 1.5983304977416992,
+            "success_rate": 1.0,
+            "total_requests": 3847,
+            "failed_requests": 0,
+            "cpu_usage": 0.31812919823291097,
+            "memory_usage": 66847158.85714286,
+            "cpu_utilization": 0.530215330388185,
+            "memory_utilization": 0.2490250723702567,
+            "cpu_throttling": 0.5473113036254317,
+            "memory_peak_usage": 79818752.0,
+            "request_rate": 42.3215858481648,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:32:04.387251"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.3,
+            "memory_limit": 896
+          },
+          "fitness": 0.6482691228831663,
+          "objectives": {
+            "f1": 0.4979690206880136,
+            "f2": 1.175,
+            "f3": -5.639381043397221
+          },
+          "evaluation_time_seconds": 218.44,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 5.639381043397221,
+            "avg_latency": 3.8681772494361173,
+            "p95_latency": 3.985386610031128,
+            "p99_latency": 3.989454746246338,
+            "success_rate": 1.0,
+            "total_requests": 529,
+            "failed_requests": 0,
+            "cpu_usage": 0.1838466148539197,
+            "memory_usage": 63070208.0,
+            "cpu_utilization": 0.6128220495130657,
+            "memory_utilization": 0.06712995256696429,
+            "cpu_throttling": 0.9204375530947771,
+            "memory_peak_usage": 70934528.0,
+            "request_rate": 5.639381043397221,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:40:13.262602"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 1,
+            "cpu_limit": 0.1,
+            "memory_limit": 512
+          },
+          "fitness": 0.4024067571703627,
+          "objectives": {
+            "f1": 0.45442790401155386,
+            "f2": 0.6,
+            "f3": -2.2753232914215906
+          },
+          "evaluation_time_seconds": 163.82,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 2.2753232914215906,
+            "avg_latency": 4.097232699394226,
+            "p95_latency": 7.606457948684692,
+            "p99_latency": 7.606457948684692,
+            "success_rate": 0.009009009009009009,
+            "total_requests": 222,
+            "failed_requests": 220,
+            "cpu_usage": 0.06781775425835317,
+            "memory_usage": 60756553.14285714,
+            "cpu_utilization": 0.6781775425835316,
+            "memory_utilization": 0.11316789899553571,
+            "cpu_throttling": 0.7683757665192015,
+            "memory_peak_usage": 75419648.0,
+            "request_rate": 2.2753232914215906,
+            "error_rate": 0.990990990990991,
+            "evaluated_at": "2026-06-15T03:42:59.083531"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 384
+          },
+          "fitness": 0.6709393134870959,
+          "objectives": {
+            "f1": 0.41886952762473123,
+            "f2": 4.1,
+            "f3": -46.80798155086241
+          },
+          "evaluation_time_seconds": 327.05,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 46.80798155086241,
+            "avg_latency": 0.45856696699652644,
+            "p95_latency": 1.133023738861084,
+            "p99_latency": 1.4894638061523438,
+            "success_rate": 1.0,
+            "total_requests": 4232,
+            "failed_requests": 0,
+            "cpu_usage": 0.33368240650619846,
+            "memory_usage": 69325092.57142857,
+            "cpu_utilization": 0.5133575484710745,
+            "memory_utilization": 0.1721707298642113,
+            "cpu_throttling": 0.6389170337650875,
+            "memory_peak_usage": 80056320.0,
+            "request_rate": 46.80798155086241,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:48:28.131812"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 128
+          },
+          "fitness": 0.6723790331415542,
+          "objectives": {
+            "f1": 0.598532875466703,
+            "f2": 2.7,
+            "f3": -38.64152219522411
+          },
+          "evaluation_time_seconds": 263.3,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 38.64152219522411,
+            "avg_latency": 0.5562704893467606,
+            "p95_latency": 1.4420926570892334,
+            "p99_latency": 1.9338438510894775,
+            "success_rate": 1.0,
+            "total_requests": 3515,
+            "failed_requests": 0,
+            "cpu_usage": 0.2802205338436264,
+            "memory_usage": 66187556.571428575,
+            "cpu_utilization": 0.5094918797156843,
+            "memory_utilization": 0.49313572474888395,
+            "cpu_throttling": 0.6252884071834058,
+            "memory_peak_usage": 76742656.0,
+            "request_rate": 38.64152219522411,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:26:23.850398"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.55,
+            "memory_limit": 128
+          },
+          "fitness": 0.6733873360753762,
+          "objectives": {
+            "f1": 0.6107822157178697,
+            "f2": 2.0250000000000004,
+            "f3": -29.76233089530398
+          },
+          "evaluation_time_seconds": 241.84,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 29.76233089530398,
+            "avg_latency": 0.7250823724476843,
+            "p95_latency": 1.6470296382904053,
+            "p99_latency": 1.9931988716125488,
+            "success_rate": 1.0,
+            "total_requests": 2707,
+            "failed_requests": 0,
+            "cpu_usage": 0.2968453791202827,
+            "memory_usage": 65647762.28571428,
+            "cpu_utilization": 0.5397188711277867,
+            "memory_utilization": 0.4891139439174107,
+            "cpu_throttling": 0.6292182400294896,
+            "memory_peak_usage": 79503360.0,
+            "request_rate": 29.76233089530398,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:52:33.973297"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6713786927611982,
+          "objectives": {
+            "f1": 0.4825386987713237,
+            "f2": 3.0,
+            "f3": -34.966477102829124
+          },
+          "evaluation_time_seconds": 339.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.966477102829124,
+            "avg_latency": 0.616843778979549,
+            "p95_latency": 1.414745569229126,
+            "p99_latency": 1.9619197845458984,
+            "success_rate": 1.0,
+            "total_requests": 3171,
+            "failed_requests": 0,
+            "cpu_usage": 0.2517759536683403,
+            "memory_usage": 69703972.57142857,
+            "cpu_utilization": 0.5035519073366806,
+            "memory_utilization": 0.2596675327845982,
+            "cpu_throttling": 0.6689653369957724,
+            "memory_peak_usage": 79486976.0,
+            "request_rate": 34.966477102829124,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:38:09.996285"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 256
+          },
+          "fitness": 0.674163569209663,
+          "objectives": {
+            "f1": 0.45663593001505115,
+            "f2": 3.2,
+            "f3": -39.52143726842044
+          },
+          "evaluation_time_seconds": 280.16,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 39.52143726842044,
+            "avg_latency": 0.5446136269413603,
+            "p95_latency": 1.3585865497589111,
+            "p99_latency": 1.7876777648925781,
+            "success_rate": 1.0,
+            "total_requests": 3581,
+            "failed_requests": 0,
+            "cpu_usage": 0.2672996762629251,
+            "memory_usage": 66948827.428571425,
+            "cpu_utilization": 0.48599941138713654,
+            "memory_utilization": 0.24940381731305802,
+            "cpu_throttling": 0.6199063815144773,
+            "memory_peak_usage": 78749696.0,
+            "request_rate": 39.52143726842044,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:57:18.138614"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 128
+          },
+          "fitness": 0.673693236723809,
+          "objectives": {
+            "f1": 0.6019021782038961,
+            "f2": 2.5,
+            "f3": -34.22131024938147
+          },
+          "evaluation_time_seconds": 310.84,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.22131024938147,
+            "avg_latency": 0.6305894256982733,
+            "p95_latency": 1.6916027069091797,
+            "p99_latency": 2.1671485900878906,
+            "success_rate": 1.0,
+            "total_requests": 3103,
+            "failed_requests": 0,
+            "cpu_usage": 0.25170209223193535,
+            "memory_usage": 69539986.28571428,
+            "cpu_utilization": 0.5034041844638707,
+            "memory_utilization": 0.518113272530692,
+            "cpu_throttling": 0.6134418075796673,
+            "memory_peak_usage": 79237120.0,
+            "request_rate": 34.22131024938147,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:02:30.979054"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 640
+          },
+          "fitness": 0.6681748598109803,
+          "objectives": {
+            "f1": 0.36702636888167783,
+            "f2": 5.1,
+            "f3": -45.81789182272625
+          },
+          "evaluation_time_seconds": 266.3,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 45.81789182272625,
+            "avg_latency": 0.46816191440955834,
+            "p95_latency": 1.2444171905517578,
+            "p99_latency": 1.4936366081237793,
+            "success_rate": 1.0,
+            "total_requests": 4146,
+            "failed_requests": 0,
+            "cpu_usage": 0.3282752131335879,
+            "memory_usage": 67953956.57142857,
+            "cpu_utilization": 0.505038789436289,
+            "memory_utilization": 0.10125928606305803,
+            "cpu_throttling": 0.6141125522164806,
+            "memory_peak_usage": 80490496.0,
+            "request_rate": 45.81789182272625,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:06:59.277054"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.6818577346929231,
+          "objectives": {
+            "f1": 0.42749323665967615,
+            "f2": 3.6,
+            "f3": -45.93347566228048
+          },
+          "evaluation_time_seconds": 324.58,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 45.93347566228048,
+            "avg_latency": 0.4668870112778936,
+            "p95_latency": 1.2154154777526855,
+            "p99_latency": 1.5031423568725586,
+            "success_rate": 1.0,
+            "total_requests": 4156,
+            "failed_requests": 0,
+            "cpu_usage": 0.31995970695942527,
+            "memory_usage": 69118537.14285715,
+            "cpu_utilization": 0.4922457030145004,
+            "memory_utilization": 0.2574866158621652,
+            "cpu_throttling": 0.5580504381631023,
+            "memory_peak_usage": 79708160.0,
+            "request_rate": 45.93347566228048,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:12:25.855529"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 384
+          },
+          "fitness": 0.6723441477484435,
+          "objectives": {
+            "f1": 0.380520222189316,
+            "f2": 3.7,
+            "f3": -34.308417664820226
+          },
+          "evaluation_time_seconds": 284.75,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.308417664820226,
+            "avg_latency": 0.6276483238795787,
+            "p95_latency": 2.008866310119629,
+            "p99_latency": 2.3358280658721924,
+            "success_rate": 1.0,
+            "total_requests": 3115,
+            "failed_requests": 0,
+            "cpu_usage": 0.2579499633779086,
+            "memory_usage": 68697673.14285715,
+            "cpu_utilization": 0.46899993341437923,
+            "memory_utilization": 0.1706125168573289,
+            "cpu_throttling": 0.5632356754984237,
+            "memory_peak_usage": 79646720.0,
+            "request_rate": 34.308417664820226,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:17:12.603051"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 4,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.6697,
+        "max_fitness": 0.6859,
+        "min_fitness": 0.6152,
+        "diversity": 0.0167,
+        "convergence": 0.9997,
+        "objectives": {
+          "avg_f1": 0.4776,
+          "min_f1": 0.3947,
+          "avg_f2": 2.7729,
+          "min_f2": 1.4,
+          "avg_f3": -31.8816,
+          "min_f3": -49.041
+        },
+        "metrics": {
+          "avg_throughput_rps": 31.88,
+          "max_throughput_rps": 49.04,
+          "avg_p95_latency_s": 2.2397,
+          "max_p95_latency_s": 7.6175,
+          "avg_cpu_throttle_rate": 0.6375
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.685909381651712,
+          "objectives": {
+            "f1": 0.4223296630431846,
+            "f2": 3.4,
+            "f3": -42.3215858481648
+          },
+          "evaluation_time_seconds": 338.54,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.3215858481648,
+            "avg_latency": 0.5070733349137967,
+            "p95_latency": 1.2952523231506348,
+            "p99_latency": 1.5983304977416992,
+            "success_rate": 1.0,
+            "total_requests": 3847,
+            "failed_requests": 0,
+            "cpu_usage": 0.31812919823291097,
+            "memory_usage": 66847158.85714286,
+            "cpu_utilization": 0.530215330388185,
+            "memory_utilization": 0.2490250723702567,
+            "cpu_throttling": 0.5473113036254317,
+            "memory_peak_usage": 79818752.0,
+            "request_rate": 42.3215858481648,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:32:04.387251"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.3,
+            "memory_limit": 512
+          },
+          "fitness": 0.6672701861287441,
+          "objectives": {
+            "f1": 0.3947158445863952,
+            "f2": 2.4000000000000004,
+            "f3": -15.547833467218048
+          },
+          "evaluation_time_seconds": 298.75,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 15.547833467218048,
+            "avg_latency": 1.3906754644293533,
+            "p95_latency": 3.557894468307495,
+            "p99_latency": 3.862840414047241,
+            "success_rate": 1.0,
+            "total_requests": 1425,
+            "failed_requests": 0,
+            "cpu_usage": 0.1651790695743423,
+            "memory_usage": 69037494.85714285,
+            "cpu_utilization": 0.550596898581141,
+            "memory_utilization": 0.12859235491071427,
+            "cpu_throttling": 0.6433898190556029,
+            "memory_peak_usage": 78405632.0,
+            "request_rate": 15.547833467218048,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:22:13.353452"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.55,
+            "memory_limit": 512
+          },
+          "fitness": 0.6689114326863955,
+          "objectives": {
+            "f1": 0.40418137133701487,
+            "f2": 3.1500000000000004,
+            "f3": -30.495519258424213
+          },
+          "evaluation_time_seconds": 253.58,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 30.495519258424213,
+            "avg_latency": 0.7089470429322455,
+            "p95_latency": 1.695847511291504,
+            "p99_latency": 2.041351795196533,
+            "success_rate": 1.0,
+            "total_requests": 2773,
+            "failed_requests": 0,
+            "cpu_usage": 0.30817433707493247,
+            "memory_usage": 67293769.14285715,
+            "cpu_utilization": 0.5603169764998772,
+            "memory_utilization": 0.12534441266741073,
+            "cpu_throttling": 0.659902354490436,
+            "memory_peak_usage": 79704064.0,
+            "request_rate": 30.495519258424213,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:26:28.931783"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.1,
+            "memory_limit": 256
+          },
+          "fitness": 0.6151546666981084,
+          "objectives": {
+            "f1": 0.5331839247508587,
+            "f2": 1.4,
+            "f3": -6.420231420981034
+          },
+          "evaluation_time_seconds": 264.8,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 6.420231420981034,
+            "avg_latency": 3.2858076450586724,
+            "p95_latency": 7.6174705028533936,
+            "p99_latency": 11.001322031021118,
+            "success_rate": 0.9899497487437185,
+            "total_requests": 597,
+            "failed_requests": 6,
+            "cpu_usage": 0.0524445450859244,
+            "memory_usage": 62154459.428571425,
+            "cpu_utilization": 0.524445450859244,
+            "memory_utilization": 0.23154340471540177,
+            "cpu_throttling": 0.7771069852439049,
+            "memory_peak_usage": 77647872.0,
+            "request_rate": 6.420231420981034,
+            "error_rate": 0.010050251256281407,
+            "evaluated_at": "2026-06-15T04:30:55.727770"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.55,
+            "memory_limit": 128
+          },
+          "fitness": 0.6733873360753762,
+          "objectives": {
+            "f1": 0.6107822157178697,
+            "f2": 2.0250000000000004,
+            "f3": -29.76233089530398
+          },
+          "evaluation_time_seconds": 241.84,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 29.76233089530398,
+            "avg_latency": 0.7250823724476843,
+            "p95_latency": 1.6470296382904053,
+            "p99_latency": 1.9931988716125488,
+            "success_rate": 1.0,
+            "total_requests": 2707,
+            "failed_requests": 0,
+            "cpu_usage": 0.2968453791202827,
+            "memory_usage": 65647762.28571428,
+            "cpu_utilization": 0.5397188711277867,
+            "memory_utilization": 0.4891139439174107,
+            "cpu_throttling": 0.6292182400294896,
+            "memory_peak_usage": 79503360.0,
+            "request_rate": 29.76233089530398,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:52:33.973297"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.6818577346929231,
+          "objectives": {
+            "f1": 0.42749323665967615,
+            "f2": 3.6,
+            "f3": -45.93347566228048
+          },
+          "evaluation_time_seconds": 324.58,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 45.93347566228048,
+            "avg_latency": 0.4668870112778936,
+            "p95_latency": 1.2154154777526855,
+            "p99_latency": 1.5031423568725586,
+            "success_rate": 1.0,
+            "total_requests": 4156,
+            "failed_requests": 0,
+            "cpu_usage": 0.31995970695942527,
+            "memory_usage": 69118537.14285715,
+            "cpu_utilization": 0.4922457030145004,
+            "memory_utilization": 0.2574866158621652,
+            "cpu_throttling": 0.5580504381631023,
+            "memory_peak_usage": 79708160.0,
+            "request_rate": 45.93347566228048,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:12:25.855529"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.55,
+            "memory_limit": 256
+          },
+          "fitness": 0.6767086695314426,
+          "objectives": {
+            "f1": 0.48335897174751336,
+            "f2": 2.4000000000000004,
+            "f3": -30.163690971609483
+          },
+          "evaluation_time_seconds": 310.01,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 30.163690971609483,
+            "avg_latency": 0.7158231936085406,
+            "p95_latency": 1.5935566425323486,
+            "p99_latency": 1.9852583408355713,
+            "success_rate": 1.0,
+            "total_requests": 2742,
+            "failed_requests": 0,
+            "cpu_usage": 0.3208291522857357,
+            "memory_usage": 67970974.47619048,
+            "cpu_utilization": 0.5833257314286103,
+            "memory_utilization": 0.25321161179315477,
+            "cpu_throttling": 0.6731846182997142,
+            "memory_peak_usage": 78794752.0,
+            "request_rate": 30.163690971609483,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:36:11.736081"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 256
+          },
+          "fitness": 0.674163569209663,
+          "objectives": {
+            "f1": 0.45663593001505115,
+            "f2": 3.2,
+            "f3": -39.52143726842044
+          },
+          "evaluation_time_seconds": 280.16,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 39.52143726842044,
+            "avg_latency": 0.5446136269413603,
+            "p95_latency": 1.3585865497589111,
+            "p99_latency": 1.7876777648925781,
+            "success_rate": 1.0,
+            "total_requests": 3581,
+            "failed_requests": 0,
+            "cpu_usage": 0.2672996762629251,
+            "memory_usage": 66948827.428571425,
+            "cpu_utilization": 0.48599941138713654,
+            "memory_utilization": 0.24940381731305802,
+            "cpu_throttling": 0.6199063815144773,
+            "memory_peak_usage": 78749696.0,
+            "request_rate": 39.52143726842044,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:57:18.138614"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.55,
+            "memory_limit": 128
+          },
+          "fitness": 0.6723790331415542,
+          "objectives": {
+            "f1": 0.598532875466703,
+            "f2": 2.7,
+            "f3": -38.64152219522411
+          },
+          "evaluation_time_seconds": 263.3,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 38.64152219522411,
+            "avg_latency": 0.5562704893467606,
+            "p95_latency": 1.4420926570892334,
+            "p99_latency": 1.9338438510894775,
+            "success_rate": 1.0,
+            "total_requests": 3515,
+            "failed_requests": 0,
+            "cpu_usage": 0.2802205338436264,
+            "memory_usage": 66187556.571428575,
+            "cpu_utilization": 0.5094918797156843,
+            "memory_utilization": 0.49313572474888395,
+            "cpu_throttling": 0.6252884071834058,
+            "memory_peak_usage": 76742656.0,
+            "request_rate": 38.64152219522411,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:26:23.850398"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.6811433756774398,
+          "objectives": {
+            "f1": 0.43879126556108333,
+            "f2": 3.8,
+            "f3": -49.041044377637476
+          },
+          "evaluation_time_seconds": 247.86,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.041044377637476,
+            "avg_latency": 0.43734107480361284,
+            "p95_latency": 1.1677823066711426,
+            "p99_latency": 1.4623217582702637,
+            "success_rate": 1.0,
+            "total_requests": 4430,
+            "failed_requests": 0,
+            "cpu_usage": 0.3558659337920245,
+            "memory_usage": 68402176.0,
+            "cpu_utilization": 0.5083799054171779,
+            "memory_utilization": 0.2548179626464844,
+            "cpu_throttling": 0.5803718377627917,
+            "memory_peak_usage": 79781888.0,
+            "request_rate": 49.041044377637476,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:53:57.819397"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.35,
+            "memory_limit": 256
+          },
+          "fitness": 0.6676580646541396,
+          "objectives": {
+            "f1": 0.4988442965945117,
+            "f2": 2.4,
+            "f3": -23.62441471962645
+          },
+          "evaluation_time_seconds": 288.35,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 23.62441471962645,
+            "avg_latency": 0.9123594194801792,
+            "p95_latency": 2.445617198944092,
+            "p99_latency": 2.8720719814300537,
+            "success_rate": 1.0,
+            "total_requests": 2169,
+            "failed_requests": 0,
+            "cpu_usage": 0.1811070287314493,
+            "memory_usage": 65996946.28571428,
+            "cpu_utilization": 0.5174486535184266,
+            "memory_utilization": 0.24585778372628347,
+            "cpu_throttling": 0.7054370062749609,
+            "memory_peak_usage": 78450688.0,
+            "request_rate": 23.62441471962645,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:41:08.089346"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.45,
+            "memory_limit": 256
+          },
+          "fitness": 0.6723565311656886,
+          "objectives": {
+            "f1": 0.4621878322935152,
+            "f2": 2.8,
+            "f3": -31.10617470418375
+          },
+          "evaluation_time_seconds": 265.87,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 31.10617470418375,
+            "avg_latency": 0.6936245562970237,
+            "p95_latency": 1.8397564888000488,
+            "p99_latency": 2.288177251815796,
+            "success_rate": 1.0,
+            "total_requests": 2821,
+            "failed_requests": 0,
+            "cpu_usage": 0.2182003488845418,
+            "memory_usage": 68170166.85714285,
+            "cpu_utilization": 0.4848896641878706,
+            "memory_utilization": 0.2539536612374442,
+            "cpu_throttling": 0.6305981987667179,
+            "memory_peak_usage": 78860288.0,
+            "request_rate": 31.10617470418375,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:39:57.108747"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 5,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.672,
+        "max_fitness": 0.6859,
+        "min_fitness": 0.6564,
+        "diversity": 0.0454,
+        "convergence": 0.9999,
+        "objectives": {
+          "avg_f1": 0.4556,
+          "min_f1": 0.3776,
+          "avg_f2": 3.1833,
+          "min_f2": 1.2,
+          "avg_f3": -34.5503,
+          "min_f3": -49.041
+        },
+        "metrics": {
+          "avg_throughput_rps": 34.55,
+          "max_throughput_rps": 49.04,
+          "avg_p95_latency_s": 1.9878,
+          "max_p95_latency_s": 5.7897,
+          "avg_cpu_throttle_rate": 0.6471
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.685909381651712,
+          "objectives": {
+            "f1": 0.4223296630431846,
+            "f2": 3.4,
+            "f3": -42.3215858481648
+          },
+          "evaluation_time_seconds": 338.54,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.3215858481648,
+            "avg_latency": 0.5070733349137967,
+            "p95_latency": 1.2952523231506348,
+            "p99_latency": 1.5983304977416992,
+            "success_rate": 1.0,
+            "total_requests": 3847,
+            "failed_requests": 0,
+            "cpu_usage": 0.31812919823291097,
+            "memory_usage": 66847158.85714286,
+            "cpu_utilization": 0.530215330388185,
+            "memory_utilization": 0.2490250723702567,
+            "cpu_throttling": 0.5473113036254317,
+            "memory_peak_usage": 79818752.0,
+            "request_rate": 42.3215858481648,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:32:04.387251"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.15,
+            "memory_limit": 768
+          },
+          "fitness": 0.6564070889102075,
+          "objectives": {
+            "f1": 0.4229200835144364,
+            "f2": 3.6,
+            "f3": -10.294948483876821
+          },
+          "evaluation_time_seconds": 325.5,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 10.294948483876821,
+            "avg_latency": 2.107801702735039,
+            "p95_latency": 4.3920745849609375,
+            "p99_latency": 4.889681339263916,
+            "success_rate": 1.0,
+            "total_requests": 947,
+            "failed_requests": 0,
+            "cpu_usage": 0.08200449436051953,
+            "memory_usage": 67414162.28571428,
+            "cpu_utilization": 0.5466966290701302,
+            "memory_utilization": 0.08371244158063616,
+            "cpu_throttling": 0.7480109840861644,
+            "memory_peak_usage": 78782464.0,
+            "request_rate": 10.294948483876821,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:46:37.590927"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.55,
+            "memory_limit": 1024
+          },
+          "fitness": 0.6595148131732305,
+          "objectives": {
+            "f1": 0.37846360966329934,
+            "f2": 3.1,
+            "f3": -21.06541678163388
+          },
+          "evaluation_time_seconds": 195.57,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 21.06541678163388,
+            "avg_latency": 1.0295901844691033,
+            "p95_latency": 1.9762530326843262,
+            "p99_latency": 2.043257236480713,
+            "success_rate": 1.0,
+            "total_requests": 1912,
+            "failed_requests": 0,
+            "cpu_usage": 0.28903567912093486,
+            "memory_usage": 65242940.952380955,
+            "cpu_utilization": 0.5255194165835179,
+            "memory_utilization": 0.06076222374325707,
+            "cpu_throttling": 0.6837384375883174,
+            "memory_peak_usage": 78585856.0,
+            "request_rate": 21.06541678163388,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:49:55.160126"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.675249228835339,
+          "objectives": {
+            "f1": 0.4752621010809134,
+            "f2": 2.7,
+            "f3": -35.17221878818447
+          },
+          "evaluation_time_seconds": 298.23,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 35.17221878818447,
+            "avg_latency": 0.6119001392726046,
+            "p95_latency": 1.5395379066467285,
+            "p99_latency": 1.7089428901672363,
+            "success_rate": 1.0,
+            "total_requests": 3197,
+            "failed_requests": 0,
+            "cpu_usage": 0.35340905114086335,
+            "memory_usage": 67236230.0952381,
+            "cpu_utilization": 0.5437062325244051,
+            "memory_utilization": 0.2504744756789435,
+            "cpu_throttling": 0.6574944170055768,
+            "memory_peak_usage": 78659584.0,
+            "request_rate": 35.17221878818447,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:54:55.387767"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.6818577346929231,
+          "objectives": {
+            "f1": 0.42749323665967615,
+            "f2": 3.6,
+            "f3": -45.93347566228048
+          },
+          "evaluation_time_seconds": 324.58,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 45.93347566228048,
+            "avg_latency": 0.4668870112778936,
+            "p95_latency": 1.2154154777526855,
+            "p99_latency": 1.5031423568725586,
+            "success_rate": 1.0,
+            "total_requests": 4156,
+            "failed_requests": 0,
+            "cpu_usage": 0.31995970695942527,
+            "memory_usage": 69118537.14285715,
+            "cpu_utilization": 0.4922457030145004,
+            "memory_utilization": 0.2574866158621652,
+            "cpu_throttling": 0.5580504381631023,
+            "memory_peak_usage": 79708160.0,
+            "request_rate": 45.93347566228048,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:12:25.855529"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.6811433756774398,
+          "objectives": {
+            "f1": 0.43879126556108333,
+            "f2": 3.8,
+            "f3": -49.041044377637476
+          },
+          "evaluation_time_seconds": 247.86,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.041044377637476,
+            "avg_latency": 0.43734107480361284,
+            "p95_latency": 1.1677823066711426,
+            "p99_latency": 1.4623217582702637,
+            "success_rate": 1.0,
+            "total_requests": 4430,
+            "failed_requests": 0,
+            "cpu_usage": 0.3558659337920245,
+            "memory_usage": 68402176.0,
+            "cpu_utilization": 0.5083799054171779,
+            "memory_utilization": 0.2548179626464844,
+            "cpu_throttling": 0.5803718377627917,
+            "memory_peak_usage": 79781888.0,
+            "request_rate": 49.041044377637476,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:53:57.819397"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 384
+          },
+          "fitness": 0.6709393134870959,
+          "objectives": {
+            "f1": 0.41886952762473123,
+            "f2": 4.1,
+            "f3": -46.80798155086241
+          },
+          "evaluation_time_seconds": 327.05,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 46.80798155086241,
+            "avg_latency": 0.45856696699652644,
+            "p95_latency": 1.133023738861084,
+            "p99_latency": 1.4894638061523438,
+            "success_rate": 1.0,
+            "total_requests": 4232,
+            "failed_requests": 0,
+            "cpu_usage": 0.33368240650619846,
+            "memory_usage": 69325092.57142857,
+            "cpu_utilization": 0.5133575484710745,
+            "memory_utilization": 0.1721707298642113,
+            "cpu_throttling": 0.6389170337650875,
+            "memory_peak_usage": 80056320.0,
+            "request_rate": 46.80798155086241,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:48:28.131812"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.6728335270162971,
+          "objectives": {
+            "f1": 0.48560677655161877,
+            "f2": 2.55,
+            "f3": -32.70560119635011
+          },
+          "evaluation_time_seconds": 247.25,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 32.70560119635011,
+            "avg_latency": 0.6588939837196065,
+            "p95_latency": 1.5241992473602295,
+            "p99_latency": 1.791168212890625,
+            "success_rate": 1.0,
+            "total_requests": 2971,
+            "failed_requests": 0,
+            "cpu_usage": 0.3268915013553247,
+            "memory_usage": 66779038.47619047,
+            "cpu_utilization": 0.5448191689255412,
+            "memory_utilization": 0.24877130417596724,
+            "cpu_throttling": 0.6830665804469875,
+            "memory_peak_usage": 77348864.0,
+            "request_rate": 32.70560119635011,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:59:10.639113"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 128
+          },
+          "fitness": 0.6730142672571578,
+          "objectives": {
+            "f1": 0.6036329399058231,
+            "f2": 2.9,
+            "f3": -41.96328712047821
+          },
+          "evaluation_time_seconds": 276.41,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 41.96328712047821,
+            "avg_latency": 0.5120083052882516,
+            "p95_latency": 1.301652431488037,
+            "p99_latency": 1.66802978515625,
+            "success_rate": 1.0,
+            "total_requests": 3802,
+            "failed_requests": 0,
+            "cpu_usage": 0.2980615856495753,
+            "memory_usage": 67230427.42857143,
+            "cpu_utilization": 0.49676930941595887,
+            "memory_utilization": 0.5009057181222099,
+            "cpu_throttling": 0.6139736434835213,
+            "memory_peak_usage": 79630336.0,
+            "request_rate": 41.96328712047821,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:03:49.045999"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 512
+          },
+          "fitness": 0.6708732749794479,
+          "objectives": {
+            "f1": 0.37758841269634436,
+            "f2": 4.4,
+            "f3": -42.96891148315025
+          },
+          "evaluation_time_seconds": 315.82,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.96891148315025,
+            "avg_latency": 0.5003425717905999,
+            "p95_latency": 1.2026755809783936,
+            "p99_latency": 1.4973468780517578,
+            "success_rate": 1.0,
+            "total_requests": 3886,
+            "failed_requests": 0,
+            "cpu_usage": 0.30815390732851966,
+            "memory_usage": 68175725.71428572,
+            "cpu_utilization": 0.5135898455475328,
+            "memory_utilization": 0.1269871847970145,
+            "cpu_throttling": 0.6062357853536262,
+            "memory_peak_usage": 79962112.0,
+            "request_rate": 42.96891148315025,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:09:06.870679"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.672994400192121,
+          "objectives": {
+            "f1": 0.48853110910145087,
+            "f2": 2.8499999999999996,
+            "f3": -38.34418412329823
+          },
+          "evaluation_time_seconds": 252.99,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 38.34418412329823,
+            "avg_latency": 0.5603391967420772,
+            "p95_latency": 1.3159587383270264,
+            "p99_latency": 1.5872247219085693,
+            "success_rate": 1.0,
+            "total_requests": 3483,
+            "failed_requests": 0,
+            "cpu_usage": 0.37284349138058037,
+            "memory_usage": 69011358.47619048,
+            "cpu_utilization": 0.5326335591151149,
+            "memory_utilization": 0.25708734421502977,
+            "cpu_throttling": 0.6802940297263392,
+            "memory_peak_usage": 79663104.0,
+            "request_rate": 38.34418412329823,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:13:21.858426"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.15,
+            "memory_limit": 256
+          },
+          "fitness": 0.6636316904211375,
+          "objectives": {
+            "f1": 0.5278055586435842,
+            "f2": 1.2000000000000002,
+            "f3": -7.984507689309103
+          },
+          "evaluation_time_seconds": 240.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 7.984507689309103,
+            "avg_latency": 2.7023263509898263,
+            "p95_latency": 5.7897233963012695,
+            "p99_latency": 6.601662874221802,
+            "success_rate": 1.0,
+            "total_requests": 748,
+            "failed_requests": 0,
+            "cpu_usage": 0.08449292749671289,
+            "memory_usage": 64495420.95238095,
+            "cpu_utilization": 0.5632861833114193,
+            "memory_utilization": 0.240264165969122,
+            "cpu_throttling": 0.7673725918965435,
+            "memory_peak_usage": 77373440.0,
+            "request_rate": 7.984507689309103,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:17:24.078402"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 6,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.6705,
+        "max_fitness": 0.6859,
+        "min_fitness": 0.6383,
+        "diversity": 0.0368,
+        "convergence": 0.9998,
+        "objectives": {
+          "avg_f1": 0.4635,
+          "min_f1": 0.3415,
+          "avg_f2": 3.0458,
+          "min_f2": 1.25,
+          "avg_f3": -33.3498,
+          "min_f3": -49.041
+        },
+        "metrics": {
+          "avg_throughput_rps": 33.35,
+          "max_throughput_rps": 49.04,
+          "avg_p95_latency_s": 2.4145,
+          "max_p95_latency_s": 8.4416,
+          "avg_cpu_throttle_rate": 0.6533
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.685909381651712,
+          "objectives": {
+            "f1": 0.4223296630431846,
+            "f2": 3.4,
+            "f3": -42.3215858481648
+          },
+          "evaluation_time_seconds": 338.54,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.3215858481648,
+            "avg_latency": 0.5070733349137967,
+            "p95_latency": 1.2952523231506348,
+            "p99_latency": 1.5983304977416992,
+            "success_rate": 1.0,
+            "total_requests": 3847,
+            "failed_requests": 0,
+            "cpu_usage": 0.31812919823291097,
+            "memory_usage": 66847158.85714286,
+            "cpu_utilization": 0.530215330388185,
+            "memory_utilization": 0.2490250723702567,
+            "cpu_throttling": 0.5473113036254317,
+            "memory_peak_usage": 79818752.0,
+            "request_rate": 42.3215858481648,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:32:04.387251"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 768
+          },
+          "fitness": 0.6697806464007796,
+          "objectives": {
+            "f1": 0.3414762632941516,
+            "f2": 5.6,
+            "f3": -46.88263638562681
+          },
+          "evaluation_time_seconds": 271.8,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 46.88263638562681,
+            "avg_latency": 0.45806254525969986,
+            "p95_latency": 1.112027645111084,
+            "p99_latency": 1.445221185684204,
+            "success_rate": 1.0,
+            "total_requests": 4238,
+            "failed_requests": 0,
+            "cpu_usage": 0.32708444432330125,
+            "memory_usage": 69426176.0,
+            "cpu_utilization": 0.5032068374204635,
+            "memory_utilization": 0.0862108866373698,
+            "cpu_throttling": 0.5835262570570532,
+            "memory_peak_usage": 80068608.0,
+            "request_rate": 46.88263638562681,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:21:57.881497"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.25,
+            "memory_limit": 384
+          },
+          "fitness": 0.6569842606003196,
+          "objectives": {
+            "f1": 0.4971090369319466,
+            "f2": 1.25,
+            "f3": -8.941380604574919
+          },
+          "evaluation_time_seconds": 228.47,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 8.941380604574919,
+            "avg_latency": 2.4219474316796483,
+            "p95_latency": 4.5215723514556885,
+            "p99_latency": 4.669255256652832,
+            "success_rate": 1.0,
+            "total_requests": 827,
+            "failed_requests": 0,
+            "cpu_usage": 0.13741998495204372,
+            "memory_usage": 65955547.428571425,
+            "cpu_utilization": 0.5496799398081749,
+            "memory_utilization": 0.1638023739769345,
+            "cpu_throttling": 0.8018250888378515,
+            "memory_peak_usage": 77467648.0,
+            "request_rate": 8.941380604574919,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:25:34.551694"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 3,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.675249228835339,
+          "objectives": {
+            "f1": 0.4752621010809134,
+            "f2": 2.7,
+            "f3": -35.17221878818447
+          },
+          "evaluation_time_seconds": 298.23,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 35.17221878818447,
+            "avg_latency": 0.6119001392726046,
+            "p95_latency": 1.5395379066467285,
+            "p99_latency": 1.7089428901672363,
+            "success_rate": 1.0,
+            "total_requests": 3197,
+            "failed_requests": 0,
+            "cpu_usage": 0.35340905114086335,
+            "memory_usage": 67236230.0952381,
+            "cpu_utilization": 0.5437062325244051,
+            "memory_utilization": 0.2504744756789435,
+            "cpu_throttling": 0.6574944170055768,
+            "memory_peak_usage": 78659584.0,
+            "request_rate": 35.17221878818447,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:54:55.387767"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.6818577346929231,
+          "objectives": {
+            "f1": 0.42749323665967615,
+            "f2": 3.6,
+            "f3": -45.93347566228048
+          },
+          "evaluation_time_seconds": 324.58,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 45.93347566228048,
+            "avg_latency": 0.4668870112778936,
+            "p95_latency": 1.2154154777526855,
+            "p99_latency": 1.5031423568725586,
+            "success_rate": 1.0,
+            "total_requests": 4156,
+            "failed_requests": 0,
+            "cpu_usage": 0.31995970695942527,
+            "memory_usage": 69118537.14285715,
+            "cpu_utilization": 0.4922457030145004,
+            "memory_utilization": 0.2574866158621652,
+            "cpu_throttling": 0.5580504381631023,
+            "memory_peak_usage": 79708160.0,
+            "request_rate": 45.93347566228048,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:12:25.855529"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.2,
+            "memory_limit": 256
+          },
+          "fitness": 0.6624535918239278,
+          "objectives": {
+            "f1": 0.517750423046518,
+            "f2": 1.8,
+            "f3": -13.357688696626209
+          },
+          "evaluation_time_seconds": 314.7,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 13.357688696626209,
+            "avg_latency": 1.627158583430947,
+            "p95_latency": 4.168765544891357,
+            "p99_latency": 5.586412668228149,
+            "success_rate": 1.0,
+            "total_requests": 1221,
+            "failed_requests": 0,
+            "cpu_usage": 0.1038306505612157,
+            "memory_usage": 64210212.571428575,
+            "cpu_utilization": 0.5191532528060785,
+            "memory_utilization": 0.2392016819545201,
+            "cpu_throttling": 0.752450308983661,
+            "memory_peak_usage": 75980800.0,
+            "request_rate": 13.357688696626209,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:27:20.584414"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.6712084060785042,
+          "objectives": {
+            "f1": 0.49023269148750687,
+            "f2": 1.8,
+            "f3": -23.255571660213263
+          },
+          "evaluation_time_seconds": 191.99,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 23.255571660213263,
+            "avg_latency": 0.9327418950277949,
+            "p95_latency": 1.8895292282104492,
+            "p99_latency": 1.931352138519287,
+            "success_rate": 1.0,
+            "total_requests": 2105,
+            "failed_requests": 0,
+            "cpu_usage": 0.34834424351289694,
+            "memory_usage": 69461138.28571428,
+            "cpu_utilization": 0.5359142207890722,
+            "memory_utilization": 0.25876290457589285,
+            "cpu_throttling": 0.6835598653968887,
+            "memory_peak_usage": 79699968.0,
+            "request_rate": 23.255571660213263,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:30:34.577346"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 384
+          },
+          "fitness": 0.6709393134870959,
+          "objectives": {
+            "f1": 0.41886952762473123,
+            "f2": 4.1,
+            "f3": -46.80798155086241
+          },
+          "evaluation_time_seconds": 327.05,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 46.80798155086241,
+            "avg_latency": 0.45856696699652644,
+            "p95_latency": 1.133023738861084,
+            "p99_latency": 1.4894638061523438,
+            "success_rate": 1.0,
+            "total_requests": 4232,
+            "failed_requests": 0,
+            "cpu_usage": 0.33368240650619846,
+            "memory_usage": 69325092.57142857,
+            "cpu_utilization": 0.5133575484710745,
+            "memory_utilization": 0.1721707298642113,
+            "cpu_throttling": 0.6389170337650875,
+            "memory_peak_usage": 80056320.0,
+            "request_rate": 46.80798155086241,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:48:28.131812"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.6811433756774398,
+          "objectives": {
+            "f1": 0.43879126556108333,
+            "f2": 3.8,
+            "f3": -49.041044377637476
+          },
+          "evaluation_time_seconds": 247.86,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.041044377637476,
+            "avg_latency": 0.43734107480361284,
+            "p95_latency": 1.1677823066711426,
+            "p99_latency": 1.4623217582702637,
+            "success_rate": 1.0,
+            "total_requests": 4430,
+            "failed_requests": 0,
+            "cpu_usage": 0.3558659337920245,
+            "memory_usage": 68402176.0,
+            "cpu_utilization": 0.5083799054171779,
+            "memory_utilization": 0.2548179626464844,
+            "cpu_throttling": 0.5803718377627917,
+            "memory_peak_usage": 79781888.0,
+            "request_rate": 49.041044377637476,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:53:57.819397"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 128
+          },
+          "fitness": 0.6810147534014261,
+          "objectives": {
+            "f1": 0.5816339790634375,
+            "f2": 3.1,
+            "f3": -46.95781830243734
+          },
+          "evaluation_time_seconds": 305.83,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 46.95781830243734,
+            "avg_latency": 0.4563499548806533,
+            "p95_latency": 1.0747225284576416,
+            "p99_latency": 1.3133840560913086,
+            "success_rate": 1.0,
+            "total_requests": 4257,
+            "failed_requests": 0,
+            "cpu_usage": 0.3406612116662184,
+            "memory_usage": 68791003.42857143,
+            "cpu_utilization": 0.524094171794182,
+            "memory_utilization": 0.5125329153878349,
+            "cpu_throttling": 0.5687550186737501,
+            "memory_peak_usage": 79794176.0,
+            "request_rate": 46.95781830243734,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:35:46.408540"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.1,
+            "memory_limit": 512
+          },
+          "fitness": 0.6383359960059316,
+          "objectives": {
+            "f1": 0.4683163223332755,
+            "f2": 2.4,
+            "f3": -6.5598717366175805
+          },
+          "evaluation_time_seconds": 280.14,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 6.5598717366175805,
+            "avg_latency": 3.2570898622910573,
+            "p95_latency": 8.441641330718994,
+            "p99_latency": 10.789687633514404,
+            "success_rate": 0.9967266775777414,
+            "total_requests": 611,
+            "failed_requests": 2,
+            "cpu_usage": 0.05549327844372264,
+            "memory_usage": 62734774.85714286,
+            "cpu_utilization": 0.5549327844372264,
+            "memory_utilization": 0.11685262407575335,
+            "cpu_throttling": 0.7980599517954573,
+            "memory_peak_usage": 74395648.0,
+            "request_rate": 6.5598717366175805,
+            "error_rate": 0.0032733224222585926,
+            "evaluated_at": "2026-06-15T05:40:28.552470"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6713786927611982,
+          "objectives": {
+            "f1": 0.4825386987713237,
+            "f2": 3.0,
+            "f3": -34.966477102829124
+          },
+          "evaluation_time_seconds": 339.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.966477102829124,
+            "avg_latency": 0.616843778979549,
+            "p95_latency": 1.414745569229126,
+            "p99_latency": 1.9619197845458984,
+            "success_rate": 1.0,
+            "total_requests": 3171,
+            "failed_requests": 0,
+            "cpu_usage": 0.2517759536683403,
+            "memory_usage": 69703972.57142857,
+            "cpu_utilization": 0.5035519073366806,
+            "memory_utilization": 0.2596675327845982,
+            "cpu_throttling": 0.6689653369957724,
+            "memory_peak_usage": 79486976.0,
+            "request_rate": 34.966477102829124,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:38:09.996285"
+          }
+        }
+      ]
+    },
+    {
+      "generation": 7,
+      "statistics": {
+        "population_size": 12,
+        "evaluations": 12,
+        "successful_evaluations": 12,
+        "success_rate": 1.0,
+        "avg_fitness": 0.6693,
+        "max_fitness": 0.6859,
+        "min_fitness": 0.6152,
+        "diversity": 0.0345,
+        "convergence": 0.9997,
+        "objectives": {
+          "avg_f1": 0.4627,
+          "min_f1": 0.371,
+          "avg_f2": 3.0625,
+          "min_f2": 1.4,
+          "avg_f3": -35.363,
+          "min_f3": -49.273
+        },
+        "metrics": {
+          "avg_throughput_rps": 35.36,
+          "max_throughput_rps": 49.27,
+          "avg_p95_latency_s": 2.0123,
+          "max_p95_latency_s": 7.6175,
+          "avg_cpu_throttle_rate": 0.6305
+        }
+      },
+      "all_individuals": [
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 256
+          },
+          "fitness": 0.685909381651712,
+          "objectives": {
+            "f1": 0.4223296630431846,
+            "f2": 3.4,
+            "f3": -42.3215858481648
+          },
+          "evaluation_time_seconds": 338.54,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.3215858481648,
+            "avg_latency": 0.5070733349137967,
+            "p95_latency": 1.2952523231506348,
+            "p99_latency": 1.5983304977416992,
+            "success_rate": 1.0,
+            "total_requests": 3847,
+            "failed_requests": 0,
+            "cpu_usage": 0.31812919823291097,
+            "memory_usage": 66847158.85714286,
+            "cpu_utilization": 0.530215330388185,
+            "memory_utilization": 0.2490250723702567,
+            "cpu_throttling": 0.5473113036254317,
+            "memory_peak_usage": 79818752.0,
+            "request_rate": 42.3215858481648,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T03:32:04.387251"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.4,
+            "memory_limit": 768
+          },
+          "fitness": 0.6615916026183197,
+          "objectives": {
+            "f1": 0.37097728618299586,
+            "f2": 2.3,
+            "f3": -14.586294319297975
+          },
+          "evaluation_time_seconds": 216.03,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 14.586294319297975,
+            "avg_latency": 1.4867227982077538,
+            "p95_latency": 2.8215599060058594,
+            "p99_latency": 2.8926842212677,
+            "success_rate": 1.0,
+            "total_requests": 1331,
+            "failed_requests": 0,
+            "cpu_usage": 0.2074244327937573,
+            "memory_usage": 66305755.428571425,
+            "cpu_utilization": 0.5185610819843932,
+            "memory_utilization": 0.0823360624767485,
+            "cpu_throttling": 0.6466837797227626,
+            "memory_peak_usage": 76722176.0,
+            "request_rate": 14.586294319297975,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:44:08.585461"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 2,
+            "cpu_limit": 0.6,
+            "memory_limit": 384
+          },
+          "fitness": 0.6609285078606654,
+          "objectives": {
+            "f1": 0.4693539806471653,
+            "f2": 1.95,
+            "f3": -21.98800867675952
+          },
+          "evaluation_time_seconds": 217.04,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 21.98800867675952,
+            "avg_latency": 0.9841284491993291,
+            "p95_latency": 1.9116604328155518,
+            "p99_latency": 1.9623241424560547,
+            "success_rate": 1.0,
+            "total_requests": 2009,
+            "failed_requests": 0,
+            "cpu_usage": 0.31441925421613576,
+            "memory_usage": 67644269.71428572,
+            "cpu_utilization": 0.5240320903602262,
+            "memory_utilization": 0.1679963611421131,
+            "cpu_throttling": 0.7458063499662057,
+            "memory_peak_usage": 77672448.0,
+            "request_rate": 21.98800867675952,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:47:47.624496"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 128
+          },
+          "fitness": 0.6810147534014261,
+          "objectives": {
+            "f1": 0.5816339790634375,
+            "f2": 3.1,
+            "f3": -46.95781830243734
+          },
+          "evaluation_time_seconds": 305.83,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 46.95781830243734,
+            "avg_latency": 0.4563499548806533,
+            "p95_latency": 1.0747225284576416,
+            "p99_latency": 1.3133840560913086,
+            "success_rate": 1.0,
+            "total_requests": 4257,
+            "failed_requests": 0,
+            "cpu_usage": 0.3406612116662184,
+            "memory_usage": 68791003.42857143,
+            "cpu_utilization": 0.524094171794182,
+            "memory_utilization": 0.5125329153878349,
+            "cpu_throttling": 0.5687550186737501,
+            "memory_peak_usage": 79794176.0,
+            "request_rate": 46.95781830243734,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:35:46.408540"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.65,
+            "memory_limit": 256
+          },
+          "fitness": 0.6818577346929231,
+          "objectives": {
+            "f1": 0.42749323665967615,
+            "f2": 3.6,
+            "f3": -45.93347566228048
+          },
+          "evaluation_time_seconds": 324.58,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 45.93347566228048,
+            "avg_latency": 0.4668870112778936,
+            "p95_latency": 1.2154154777526855,
+            "p99_latency": 1.5031423568725586,
+            "success_rate": 1.0,
+            "total_requests": 4156,
+            "failed_requests": 0,
+            "cpu_usage": 0.31995970695942527,
+            "memory_usage": 69118537.14285715,
+            "cpu_utilization": 0.4922457030145004,
+            "memory_utilization": 0.2574866158621652,
+            "cpu_throttling": 0.5580504381631023,
+            "memory_peak_usage": 79708160.0,
+            "request_rate": 45.93347566228048,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T04:12:25.855529"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.5,
+            "memory_limit": 256
+          },
+          "fitness": 0.6713786927611982,
+          "objectives": {
+            "f1": 0.4825386987713237,
+            "f2": 3.0,
+            "f3": -34.966477102829124
+          },
+          "evaluation_time_seconds": 339.22,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 34.966477102829124,
+            "avg_latency": 0.616843778979549,
+            "p95_latency": 1.414745569229126,
+            "p99_latency": 1.9619197845458984,
+            "success_rate": 1.0,
+            "total_requests": 3171,
+            "failed_requests": 0,
+            "cpu_usage": 0.2517759536683403,
+            "memory_usage": 69703972.57142857,
+            "cpu_utilization": 0.5035519073366806,
+            "memory_utilization": 0.2596675327845982,
+            "cpu_throttling": 0.6689653369957724,
+            "memory_peak_usage": 79486976.0,
+            "request_rate": 34.966477102829124,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T01:38:09.996285"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 256
+          },
+          "fitness": 0.6811433756774398,
+          "objectives": {
+            "f1": 0.43879126556108333,
+            "f2": 3.8,
+            "f3": -49.041044377637476
+          },
+          "evaluation_time_seconds": 247.86,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.041044377637476,
+            "avg_latency": 0.43734107480361284,
+            "p95_latency": 1.1677823066711426,
+            "p99_latency": 1.4623217582702637,
+            "success_rate": 1.0,
+            "total_requests": 4430,
+            "failed_requests": 0,
+            "cpu_usage": 0.3558659337920245,
+            "memory_usage": 68402176.0,
+            "cpu_utilization": 0.5083799054171779,
+            "memory_utilization": 0.2548179626464844,
+            "cpu_throttling": 0.5803718377627917,
+            "memory_peak_usage": 79781888.0,
+            "request_rate": 49.041044377637476,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T02:53:57.819397"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.1,
+            "memory_limit": 256
+          },
+          "fitness": 0.6151546666981084,
+          "objectives": {
+            "f1": 0.5331839247508587,
+            "f2": 1.4,
+            "f3": -6.420231420981034
+          },
+          "evaluation_time_seconds": 264.8,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 6.420231420981034,
+            "avg_latency": 3.2858076450586724,
+            "p95_latency": 7.6174705028533936,
+            "p99_latency": 11.001322031021118,
+            "success_rate": 0.9899497487437185,
+            "total_requests": 597,
+            "failed_requests": 6,
+            "cpu_usage": 0.0524445450859244,
+            "memory_usage": 62154459.428571425,
+            "cpu_utilization": 0.524445450859244,
+            "memory_utilization": 0.23154340471540177,
+            "cpu_throttling": 0.7771069852439049,
+            "memory_peak_usage": 77647872.0,
+            "request_rate": 6.420231420981034,
+            "error_rate": 0.010050251256281407,
+            "evaluated_at": "2026-06-15T04:30:55.727770"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 128
+          },
+          "fitness": 0.6730142672571578,
+          "objectives": {
+            "f1": 0.6036329399058231,
+            "f2": 2.9,
+            "f3": -41.96328712047821
+          },
+          "evaluation_time_seconds": 276.41,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 41.96328712047821,
+            "avg_latency": 0.5120083052882516,
+            "p95_latency": 1.301652431488037,
+            "p99_latency": 1.66802978515625,
+            "success_rate": 1.0,
+            "total_requests": 3802,
+            "failed_requests": 0,
+            "cpu_usage": 0.2980615856495753,
+            "memory_usage": 67230427.42857143,
+            "cpu_utilization": 0.49676930941595887,
+            "memory_utilization": 0.5009057181222099,
+            "cpu_throttling": 0.6139736434835213,
+            "memory_peak_usage": 79630336.0,
+            "request_rate": 41.96328712047821,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:03:49.045999"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.6,
+            "memory_limit": 384
+          },
+          "fitness": 0.6754988174066258,
+          "objectives": {
+            "f1": 0.40904352089111473,
+            "f2": 3.9,
+            "f3": -42.89670881496275
+          },
+          "evaluation_time_seconds": 140.13,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 42.89670881496275,
+            "avg_latency": 0.5011465309145033,
+            "p95_latency": 1.3439607620239258,
+            "p99_latency": 1.758514642715454,
+            "success_rate": 1.0,
+            "total_requests": 3879,
+            "failed_requests": 0,
+            "cpu_usage": 0.3316305403346548,
+            "memory_usage": 69152036.57142857,
+            "cpu_utilization": 0.5527175672244247,
+            "memory_utilization": 0.17174094063895087,
+            "cpu_throttling": 0.6213707331884795,
+            "memory_peak_usage": 79208448.0,
+            "request_rate": 42.89670881496275,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:50:21.758443"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.7,
+            "memory_limit": 384
+          },
+          "fitness": 0.6775335879499582,
+          "objectives": {
+            "f1": 0.3829146100317824,
+            "f2": 4.3,
+            "f3": -49.27299378828276
+          },
+          "evaluation_time_seconds": 271.25,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 49.27299378828276,
+            "avg_latency": 0.4344577657208415,
+            "p95_latency": 1.1584956645965576,
+            "p99_latency": 1.4008829593658447,
+            "success_rate": 1.0,
+            "total_requests": 4458,
+            "failed_requests": 0,
+            "cpu_usage": 0.3623250783793917,
+            "memory_usage": 67729846.85714285,
+            "cpu_utilization": 0.5176072548277024,
+            "memory_utilization": 0.1682088942754836,
+            "cpu_throttling": 0.5722969121208564,
+            "memory_peak_usage": 77926400.0,
+            "request_rate": 49.27299378828276,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T05:54:55.012679"
+          }
+        },
+        {
+          "individual": {
+            "replicas": 4,
+            "cpu_limit": 0.4,
+            "memory_limit": 384
+          },
+          "fitness": 0.6663212152951825,
+          "objectives": {
+            "f1": 0.43012630945464503,
+            "f2": 3.1,
+            "f3": -28.00847486024796
+          },
+          "evaluation_time_seconds": 314.21,
+          "status": "ok",
+          "error": null,
+          "metrics": {
+            "throughput": 28.00847486024796,
+            "avg_latency": 0.7718868154558693,
+            "p95_latency": 1.8245177268981934,
+            "p99_latency": 2.466052293777466,
+            "success_rate": 1.0,
+            "total_requests": 2548,
+            "failed_requests": 0,
+            "cpu_usage": 0.20481244164343818,
+            "memory_usage": 64157842.28571428,
+            "cpu_utilization": 0.5120311041085954,
+            "memory_utilization": 0.15933772495814733,
+            "cpu_throttling": 0.6647773584926234,
+            "memory_peak_usage": 78708736.0,
+            "request_rate": 28.00847486024796,
+            "error_rate": 0.0,
+            "evaluated_at": "2026-06-15T06:00:11.222287"
+          }
+        }
+      ]
+    }
+  ]
+}

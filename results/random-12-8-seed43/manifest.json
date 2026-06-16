@@ -1,0 +1,31 @@
+{
+  "pop_size": 96,
+  "num_generations": 1,
+  "seed": 43,
+  "load_profile": "default",
+  "search_space": {
+    "cpu_min": 100,
+    "cpu_max": 700,
+    "cpu_step": 50,
+    "mem_min": 128,
+    "mem_max": 1024,
+    "mem_step": 128,
+    "rep_min": 1,
+    "rep_max": 4
+  },
+  "pc": 0.0,
+  "pm": 0.0,
+  "load_params": {
+    "duration": 90,
+    "concurrency": 22,
+    "timeout": 10,
+    "warmup_duration": 15,
+    "warmup_concurrency": 5,
+    "endpoint": "/mixed"
+  },
+  "deployment_name": "app-ga",
+  "app_url": "http://app-ga.default.svc.cluster.local:8080",
+  "mock": false,
+  "algorithm": "random_search",
+  "num_samples": 96
+}

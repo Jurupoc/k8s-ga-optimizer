@@ -151,4 +151,5 @@ class RealPrometheusAdapter(PrometheusAdapter):
 
     @override
     def cleanup(self) -> None:
-        self.client.clear_cache()
+        if self._client is not None:
+            self._client.clear_cache()

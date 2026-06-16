@@ -86,17 +86,68 @@ class PopulationManager:
         """
         self.params = params or GAParameters.from_env()
 
+    def _snap_cpu(self, cpu: float) -> float:
+        """
+        Arredonda ``cpu`` ao múltiplo mais próximo de ``cpu_step`` a partir
+        de ``cpu_min`` (alinhado ao grid). No-op se ``cpu_step <= 0``.
+
+        Garante que o resultado esteja dentro de [cpu_min, cpu_max].
+        """
+        cpu_min, cpu_max = self.params.cpu_limit_bounds
+        step = self.params.cpu_step
+        if step <= 0.0:
+            return round(cpu, 2)
+        # Snap ao grid (cpu_min + k*step) com k inteiro
+        k = round((cpu - cpu_min) / step)
+        snapped = cpu_min + k * step
+        snapped = max(cpu_min, min(cpu_max, snapped))
+        # 4 casas decimais bastam (step típico é 0.05)
+        return round(snapped, 4)
+
+    def _snap_mem(self, mem: int) -> int:
+        """
+        Arredonda ``mem`` ao múltiplo mais próximo de ``mem_step`` a partir
+        de ``mem_min``. No-op se ``mem_step <= 0``.
+        """
+        mem_min, mem_max = self.params.memory_limit_bounds
+        step = self.params.mem_step
+        if step <= 0:
+            return int(mem)
+        k = round((mem - mem_min) / step)
+        snapped = mem_min + k * step
+        return int(max(mem_min, min(mem_max, snapped)))
+
+    def _random_cpu(self) -> float:
+        """Sorteia cpu_limit respeitando o grid (se ``cpu_step > 0``)."""
+        cpu_min, cpu_max = self.params.cpu_limit_bounds
+        step = self.params.cpu_step
+        if step <= 0.0:
+            return round(random.uniform(cpu_min, cpu_max), 2)
+        n_points = int(round((cpu_max - cpu_min) / step))
+        k = random.randint(0, n_points)
+        return round(cpu_min + k * step, 4)
+
+    def _random_mem(self) -> int:
+        """Sorteia memory_limit respeitando o grid (se ``mem_step > 0``)."""
+        mem_min, mem_max = self.params.memory_limit_bounds
+        step = self.params.mem_step
+        if step <= 0:
+            return random.randint(mem_min, mem_max)
+        n_points = (mem_max - mem_min) // step
+        k = random.randint(0, n_points)
+        return mem_min + k * step
+
     def create_random_individual(self) -> Individual:
         """
-        Cria um indivíduo aleatório dentro dos limites.
+        Cria um indivíduo aleatório dentro dos limites (e do grid, se ativo).
 
         Returns:
             Indivíduo aleatório
         """
         return Individual(
             replicas=random.randint(*self.params.replicas_bounds),
-            cpu_limit=round(random.uniform(*self.params.cpu_limit_bounds), 2),
-            memory_limit=random.randint(*self.params.memory_limit_bounds),
+            cpu_limit=self._random_cpu(),
+            memory_limit=self._random_mem(),
         )
 
     def create_initial_population(self, size: Optional[int] = None) -> Population:
@@ -118,7 +169,8 @@ class PopulationManager:
 
     def validate_individual(self, individual: Individual) -> Individual:
         """
-        Valida e corrige um indivíduo para garantir limites.
+        Valida e corrige um indivíduo para garantir limites e (quando
+        ``cpu_step``/``mem_step > 0``) alinhamento ao grid.
 
         Args:
             individual: Indivíduo a validar
@@ -132,16 +184,18 @@ class PopulationManager:
             self.params.replicas_bounds[0],
             min(self.params.replicas_bounds[1], validated.replicas),
         )
-        validated.cpu_limit = round(
+        # cpu/mem: clamp + snap (no-op se step=0)
+        validated.cpu_limit = self._snap_cpu(
             max(
                 self.params.cpu_limit_bounds[0],
                 min(self.params.cpu_limit_bounds[1], validated.cpu_limit),
-            ),
-            2,
+            )
         )
-        validated.memory_limit = max(
-            self.params.memory_limit_bounds[0],
-            min(self.params.memory_limit_bounds[1], validated.memory_limit),
+        validated.memory_limit = self._snap_mem(
+            max(
+                self.params.memory_limit_bounds[0],
+                min(self.params.memory_limit_bounds[1], validated.memory_limit),
+            )
         )
 
         return validated

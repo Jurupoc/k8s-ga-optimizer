@@ -18,10 +18,12 @@ spec:
         volumeMounts:
         - name: results
           mountPath: /results
-        command: ["python", "-u", "scripts/run_ga.py"]
+        # Próximas execuções (editar SEED + --output-dir juntos):
+        #   seed=44 → /results/ga-12-8-seed44  (terceira seed)
+        command: ["python", "-u", "scripts/run_ga.py", "--output-dir", "/results/ga-12-8-seed44"]
         env:
         - name: PROMETHEUS_URL
-          value: "http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+          value: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
         - name: K8S_DEPLOYMENT_NAME
           value: "app-ga"
         - name: K8S_NAMESPACE
@@ -44,10 +46,11 @@ spec:
           value: "http://app-ga.default.svc.cluster.local:8080"
         - name: APP_LABEL
           value: "app-ga"
+        # Pop/Gen alinhados com NSGA-II e Random Search (mesmo orçamento de avaliações = 128)
         - name: GA_POPULATION
-          value: "6"
+          value: "12"
         - name: GA_GENERATIONS
-          value: "5"
+          value: "8"
         - name: GA_MUTATION_RATE
           value: "0.3"
         - name: GA_CROSSOVER_RATE
@@ -56,6 +59,17 @@ spec:
           value: "1"
         - name: GA_TOURNAMENT_SIZE
           value: "2"
+        # Seed do RNG: alinhada com o NSGA-II (mesma seed em ambos os
+        # algoritmos para ter condições iniciais comparáveis).
+        - name: GA_SEED
+          value: "44"
+        # Bounds + GRID DISCRETO equivalentes ao NSGA-II:
+        #   NSGA_CPU [100m..700m] step=50m → GA_CPU [0.1..0.7] step=0.05 (em cores)
+        #   NSGA_MEM [128..1024 MiB] step=128 → GA_MEMORY [128..1024] step=128
+        #   NSGA_REP [1..4] → GA_REP [1..4]
+        # Com GA_CPU_STEP/GA_MEMORY_STEP definidos, init/mutação/crossover
+        # do GA são "snappados" ao mesmo grid do NSGA — comparação justa,
+        # mesmo espaço de busca de 13 × 8 × 4 = 416 configs.
         - name: GA_REPLICAS_MIN
           value: "1"
         - name: GA_REPLICAS_MAX
@@ -63,11 +77,15 @@ spec:
         - name: GA_CPU_MIN
           value: "0.1"
         - name: GA_CPU_MAX
-          value: "1.8"
+          value: "0.7"
+        - name: GA_CPU_STEP
+          value: "0.05"
         - name: GA_MEMORY_MIN
           value: "128"
         - name: GA_MEMORY_MAX
           value: "1024"
+        - name: GA_MEMORY_STEP
+          value: "128"
         # Configurações de avaliação
         - name: GA_EVALUATION_DELAY
           value: "2"
@@ -78,19 +96,23 @@ spec:
         # Configuração de warm-up
         - name: K8S_WARMUP_TIME
           value: "10"
-        # Configurações de Load Test
+        # Configurações de Load Test (IDÊNTICAS ao nsga-job.yaml e random-search-job.yaml
+        # para permitir comparação justa entre algoritmos)
         - name: LOAD_TEST_DURATION
           value: "90"
         - name: LOAD_TEST_CONCURRENCY
-          value: "20"
+          value: "22"
         - name: LOAD_TEST_TIMEOUT
           value: "10"
         - name: LOAD_TEST_PROFILE
-          value: ""  # Vazio = sem perfil (carga fixa). Opções: burst, wave, spiky, ramp_up, sustained
+          value: "default"
         - name: LOAD_TEST_WARMUP_DURATION
-          value: "10"
+          value: "15"
         - name: LOAD_TEST_WARMUP_CONCURRENCY
-          value: "2"
+          value: "5"
+        # Endpoint entra na chave do cache (alinhado com nsga-job.yaml)
+        - name: LOAD_TEST_ENDPOINT
+          value: "/mixed"
         - name: LOAD_TEST_MIN_REQUESTS
           value: "50"
         - name: LOAD_TEST_MAX_ERROR_RATE

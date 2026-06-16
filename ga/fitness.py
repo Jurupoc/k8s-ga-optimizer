@@ -204,11 +204,12 @@ class FitnessCalculator:
         # ---------------------------
         # 3) Penalização por throttling (CPU)
         # ---------------------------
-        # cpu_throttling normalmente é "segundos throttled por segundo" agregado (rate).
-        # Se > 0, há restrição real. Penalizamos suavemente.
-        thrott = max(metrics.cpu_throttling or 0.0, 0.0)
-        # penalidade suave: 0 -> 1.0, cresce e aproxima de 0
-        thrott_penalty = 1.0 / (1.0 + 5.0 * thrott)  # ajuste 5.0 conforme observado
+        # cpu_throttling é a fração de períodos CFS que foram throttled, em [0, 1]
+        # (calculada por integrations/prometheus_client.get_cpu_throttling como
+        # rate(throttled_periods_total) / rate(periods_total)).
+        # Penalidade suave: 0 -> 1.0; 0.5 -> ~0.286; 0.9 -> ~0.182.
+        thrott = max(min(metrics.cpu_throttling or 0.0, 1.0), 0.0)
+        thrott_penalty = 1.0 / (1.0 + 5.0 * thrott)
 
         # ---------------------------
         # 4) Penalização por pico de memória (risco OOM)

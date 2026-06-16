@@ -1,0 +1,17 @@
+{
+  "algorithm": "nsga",
+  "total_time_s": 22023.616000175476,
+  "total_evaluation_time_s": 22023.599047899246,
+  "overhead_time_s": 0.0169522762298584,
+  "overhead_fraction": 7.697317384085941e-07,
+  "total_evaluations": 96,
+  "cache_hits": 10,
+  "cache_misses": 86,
+  "cache_hit_rate": 0.10416666666666667,
+  "avg_eval_time_s": 256.08836102208426,
+  "final_pareto_size": 12,
+  "final_pareto_unique": 12,
+  "eliminate_duplicates": true,
+  "dedup_replacements": 41,
+  "dedup_unresolved": 0
+}

@@ -1,0 +1,11 @@
+{
+  "algorithm": "random_search",
+  "total_time_s": 2012.8991010189056,
+  "total_evaluations": 96,
+  "cache_hits": 89,
+  "cache_misses": 7,
+  "cache_hit_rate": 0.9270833333333334,
+  "avg_eval_time_s": 287.55605929238453,
+  "final_pareto_size": 48,
+  "num_fronts": 5
+}

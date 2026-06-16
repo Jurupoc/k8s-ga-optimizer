@@ -22,29 +22,44 @@ spec:
           env:
             # ----- NSGA-II -----
             - name: NSGA_POPULATION
-              value: "6"
+              value: "12"
             - name: NSGA_GENERATIONS
-              value: "5"
+              value: "8"
             - name: NSGA_CROSSOVER_RATE
               value: "0.9"
             - name: NSGA_MUTATION_RATE
-              value: "0.1"
+              value: "0.2"
+            # Próximas execuções (editar SEED + OUTPUT_DIR juntos):
+            #   seed=42 → /results/nsga-12-8-seed42  (RE-RUN com dedup; mover antigo p/ -buggy)
+            #   seed=44 → /results/nsga-12-8-seed44  (terceira seed)
             - name: NSGA_SEED
-              value: "42"
+              value: "44"
             - name: NSGA_STABILIZATION_S
-              value: "5"
+              value: "15"
             - name: NSGA_OUTPUT_DIR
-              value: "/results/nsga"
+              value: "/results/nsga-12-8-seed42"
             - name: NSGA_MOCK
               value: "false"
+            # Defina como "true" para ignorar (e não gravar) o cache em /results/nsga/cache.jsonl
+            - name: NSGA_NO_CACHE
+              value: "false"
+            # Elimina genomes duplicados na população P∪Q (default no código = true).
+            # Tornado explícito aqui para reprodutibilidade no manifest do TCC.
+            - name: NSGA_ELIMINATE_DUPLICATES
+              value: "true"
 
             # ----- Search space (CPU em millicores, MEM em MiB) -----
+            # Cluster: minikube --cpus=8 --memory=19g
+            # Orçamento app-ga: ~5.3 cores / ~14 GiB (após kube-system + prometheus + jobs)
+            # Pior caso rollout (maxSurge=1): 7 pods × 700m = 4.9 cores ≤ 5.3 ✓
+            # Espaço total: 13 × 8 × 6 = 624 configs
+            # Cobertura pop=16, gen=8 = 128 evals → ~20% (saudável)
             - name: NSGA_CPU_MIN
               value: "100"
             - name: NSGA_CPU_MAX
-              value: "1800"
+              value: "700"
             - name: NSGA_CPU_STEP
-              value: "100"
+              value: "50"
             - name: NSGA_MEM_MIN
               value: "128"
             - name: NSGA_MEM_MAX
@@ -62,23 +77,27 @@ spec:
             - name: K8S_NAMESPACE
               value: "default"
             - name: K8S_ROLLOUT_TIMEOUT
-              value: "240"
+              value: "300"
             - name: APP_URL
               value: "http://app-ga.default.svc.cluster.local:8080"
             - name: APP_LABEL
               value: "app-ga"
 
             # ----- Load test -----
+            # Concurrency=22 calibrada empiricamente:
+            # - extremo inferior (1×100m): colapso (success ~1%, throttle ~50%) ✓
+            # - extremo superior (6×700m): saturação moderada (~52 RPS cap, ~54 RPS demanda)
+            # Concurrency=30 saturava demais (throttle 72% no extremo superior, achatava f1).
             - name: LOAD_TEST_DURATION
               value: "90"
             - name: LOAD_TEST_CONCURRENCY
-              value: "20"
+              value: "22"
             - name: LOAD_TEST_TIMEOUT
               value: "10"
             - name: LOAD_TEST_WARMUP_DURATION
-              value: "10"
+              value: "15"
             - name: LOAD_TEST_WARMUP_CONCURRENCY
-              value: "2"
+              value: "5"
             - name: LOAD_TEST_PROFILE
               value: "default"
             - name: LOAD_TEST_ENDPOINT
@@ -86,7 +105,7 @@ spec:
 
             # ----- Prometheus -----
             - name: PROMETHEUS_URL
-              value: "http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+              value: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
             - name: PROM_QUERY_TIMEOUT
               value: "10"
             - name: PROM_RETRY_ATTEMPTS

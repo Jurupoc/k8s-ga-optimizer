@@ -1,0 +1,114 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: random-search
+  namespace: default
+spec:
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+      serviceAccountName: ga-agent
+      # ---------------------------------------------------------------
+      # IMPORTANTE: para o TCC, mantemos o random search SEM cache
+      # pré-aquecido vindo de execuções de outros algoritmos. Isso
+      # garante que a comparação seja realmente "do zero" para cada
+      # algoritmo (cada um paga o custo das 96 avaliações reais).
+      # Cache LOCAL DA PRÓPRIA RUN continua funcionando (entre seeds
+      # diferentes do mesmo random search, se necessário).
+      # ---------------------------------------------------------------
+      containers:
+        - name: random-search
+          image: random-search:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: results
+              mountPath: /results
+          command: ["python", "-u", "scripts/run_random_search.py"]
+          env:
+            # ----- Random Search -----
+            # Orçamento alinhado com GA/NSGA: 12 × 8 = 96 avaliações.
+            # Permite comparar Pareto sob orçamento computacional idêntico.
+            #
+            # Próximas execuções (editar SEED + OUTPUT_DIR juntos):
+            #   seed=43 → /results/random-12-8-seed43
+            #   seed=44 → /results/random-12-8-seed44
+            - name: RS_SAMPLES
+              value: "96"
+            - name: RS_SEED
+              value: "44"
+            - name: RS_STABILIZATION_S
+              value: "15"
+            - name: RS_OUTPUT_DIR
+              value: "/results/random-12-8-seed44"
+            - name: RS_MOCK
+              value: "false"
+            - name: RS_NO_CACHE
+              value: "false"
+
+            # ----- Search space — IDÊNTICO ao nsga-job.yaml -----
+            # 13 × 8 × 4 = 416 configs (NSGA usa rep_max=4, alinhado).
+            - name: RS_CPU_MIN
+              value: "100"
+            - name: RS_CPU_MAX
+              value: "700"
+            - name: RS_CPU_STEP
+              value: "50"
+            - name: RS_MEM_MIN
+              value: "128"
+            - name: RS_MEM_MAX
+              value: "1024"
+            - name: RS_MEM_STEP
+              value: "128"
+            - name: RS_REP_MIN
+              value: "1"
+            - name: RS_REP_MAX
+              value: "4"
+
+            # ----- Kubernetes / aplicação alvo -----
+            - name: K8S_DEPLOYMENT_NAME
+              value: "app-ga"
+            - name: K8S_NAMESPACE
+              value: "default"
+            - name: K8S_ROLLOUT_TIMEOUT
+              value: "300"
+            - name: APP_URL
+              value: "http://app-ga.default.svc.cluster.local:8080"
+            - name: APP_LABEL
+              value: "app-ga"
+
+            # ----- Load test — IDÊNTICO ao nsga-job.yaml (entra na chave do cache) -----
+            - name: LOAD_TEST_DURATION
+              value: "90"
+            - name: LOAD_TEST_CONCURRENCY
+              value: "22"
+            - name: LOAD_TEST_TIMEOUT
+              value: "10"
+            - name: LOAD_TEST_WARMUP_DURATION
+              value: "15"
+            - name: LOAD_TEST_WARMUP_CONCURRENCY
+              value: "5"
+            - name: LOAD_TEST_PROFILE
+              value: "default"
+            - name: LOAD_TEST_ENDPOINT
+              value: "/mixed"
+
+            # ----- Prometheus -----
+            - name: PROMETHEUS_URL
+              value: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+            - name: PROM_QUERY_TIMEOUT
+              value: "10"
+            - name: PROM_RETRY_ATTEMPTS
+              value: "3"
+            - name: PROM_RETRY_DELAY
+              value: "1.0"
+
+            # ----- Logging -----
+            - name: LOG_LEVEL
+              value: "INFO"
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: ga-results-pvc

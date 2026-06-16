@@ -1,0 +1,19 @@
+{
+  "algorithm": "ga",
+  "status": "success",
+  "error": null,
+  "total_time_s": 14485.7,
+  "total_evaluation_time_s": 23448.64,
+  "overhead_time_s": 0.0,
+  "overhead_fraction": 0.0,
+  "total_evaluations": 96,
+  "successful_evaluations": 96,
+  "failed_evaluations": 0,
+  "completed_generations": 8,
+  "cache_size": 60,
+  "cache_hits": 36,
+  "cache_misses": 60,
+  "cache_hit_rate": 0.375,
+  "avg_eval_time_s": 244.26,
+  "best_fitness": 0.6896165179043552
+}

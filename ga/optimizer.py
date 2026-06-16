@@ -6,11 +6,13 @@ Usa módulos modulares: population, fitness, cache, etc.
 
 import time
 import json
+import random
+from dataclasses import replace
 from pathlib import Path
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from ga.types import Individual, GenerationStats, EvaluationResult
+from ga.types import Individual, GenerationStats, EvaluationResult, EvaluationStatus
 from ga.config import GAParameters, AppConfig
 from ga.population import PopulationManager, Population
 from ga.fitness import FitnessEvaluator, FitnessCalculator
@@ -45,6 +47,12 @@ class GeneticOptimizer:
         self.app_config = app_config or AppConfig.from_env()
         self.checkpoint_file = checkpoint_file
 
+        # Reprodutibilidade: semeia o módulo random global, usado por
+        # ga/population.py para inicialização, crossover, mutação e
+        # seleção por torneio. Roda em runs idênticas → mesma trajetória.
+        random.seed(self.params.seed)
+        log(f"Random seed: {self.params.seed}")
+
         # Inicializa componentes
         self.pop_manager = PopulationManager(self.params)
         self.prometheus = PrometheusClient()
@@ -59,11 +67,30 @@ class GeneticOptimizer:
             self.fitness_calc,
             require_prometheus_metrics=self.params.require_prometheus_metrics,
         )
-        self.cache = EvaluationCache(ttl=3600.0)
+
+        # Cache persistente em disco (append-only JSONL) ao lado do checkpoint.
+        # Sobrevive a crash da run e permite reaproveitar avaliações entre runs
+        # com mesma seed/config.
+        #
+        # ``load_profile`` e ``load_params`` entram na chave (alinhamento
+        # semântico com ``nsga/cache.py``), de modo que mudanças no perfil
+        # de carga invalidam medições antigas automaticamente.
+        if self.checkpoint_file:
+            cache_path = Path(self.checkpoint_file).parent / "cache.jsonl"
+        else:
+            cache_path = Path("/results/cache.jsonl")
+        self.cache = EvaluationCache(
+            cache_file=cache_path,
+            load_profile=self.params.load_profile,
+            load_params=self.params.cache_load_params(),
+        )
 
         # Histórico
         self.history: List[GenerationStats] = []
         self.evaluation_results: List[EvaluationResult] = []
+        # Estatísticas de cache (para summary.json)
+        self.cache_hits: int = 0
+        self.cache_misses: int = 0
 
     def _evaluate_individual(self, individual: Individual) -> EvaluationResult:
         """
@@ -78,7 +105,9 @@ class GeneticOptimizer:
         # Verifica cache
         cached = self.cache.get(individual)
         if cached:
+            self.cache_hits += 1
             return cached
+        self.cache_misses += 1
 
         # Avalia
         start_time = time.time()
@@ -92,6 +121,7 @@ class GeneticOptimizer:
                 fitness=fitness,
                 metrics=metrics,
                 evaluation_time=evaluation_time,
+                status=EvaluationStatus.OK,
             )
 
             # Armazena no cache apenas se fitness > 0 (resultado válido)
@@ -105,21 +135,31 @@ class GeneticOptimizer:
 
         except Exception as e:
             log(f"❌ Evaluation failed for {individual}: {e}", level="error")
-            # NÃO cacheia resultados de erro - permite retry em futuras gerações
+            # NÃO cacheia resultados de erro - permite retry em futuras gerações.
+            # O status é derivado automaticamente da mensagem de erro (TIMEOUT
+            # se a string indica "timeout"/"timed out"/"deadline", senão FAIL).
+            err_str = str(e)
             return EvaluationResult(
                 individual=individual,
                 fitness=0.0,
                 metrics=None,
                 evaluation_time=time.time() - start_time,
-                error=str(e),
+                error=err_str,
+                status=EvaluationStatus.from_error(err_str),
             )
 
-    def _evaluate_population(self, population: Population) -> List[EvaluationResult]:
+    def _evaluate_population(
+        self, population: Population, generation: int
+    ) -> List[EvaluationResult]:
         """
         Avalia toda a população.
 
         Args:
             population: População a avaliar
+            generation: Número da geração à qual estas avaliações pertencem.
+                Anotado em cada ``EvaluationResult`` para permitir reconstrução
+                fiel da trajetória (não depende de ``idx // population_size``,
+                que quebra com cache hits ou populações de tamanho variável).
 
         Returns:
             Lista de resultados
@@ -134,6 +174,11 @@ class GeneticOptimizer:
                 f"Evaluating individual {idx+1}/{len(population.individuals)}"
             )
             result = self._evaluate_individual(individual)
+            # Marca a geração em que esta avaliação foi USADA (registramos
+            # também para cache hits — facilita auditoria por geração).
+            # Usa replace() para não mutar o objeto cacheado, caso o mesmo
+            # genome reapareça em gerações futuras.
+            result = replace(result, generation=generation)
             results.append(result)
 
             # Delay entre avaliações (exceto após a última)
@@ -217,7 +262,9 @@ class GeneticOptimizer:
             log(f"{'=' * 80}")
 
             # Avalia população
-            results = self._evaluate_population(population)
+            results = self._evaluate_population(
+                population, generation=population.generation
+            )
             self.evaluation_results.extend(results)
 
             # Calcula estatísticas
@@ -252,8 +299,12 @@ class GeneticOptimizer:
                     f"  Individual {idx + 1}: REPLICAS={individual.replicas}, CPU={individual.cpu_limit}, MEMORY={individual.memory_limit} → fitness={fitness:.4f}"
                 )
 
-            # Salva checkpoint
-            self.save_checkpoint(gen + 1, best_individual, best_fitness)
+            # Salva checkpoint (inclui população atual e RNG state — habilita
+            # retomada de runs interrompidas a partir desta geração).
+            self.save_checkpoint(
+                gen + 1, best_individual, best_fitness,
+                population=population,
+            )
 
             # Evolui para próxima geração
             if gen < self.params.generations - 1:  # Não evolui na última geração
@@ -285,29 +336,79 @@ class GeneticOptimizer:
         """Retorna todos os resultados de avaliação."""
         return self.evaluation_results
 
-    def save_checkpoint(self, generation: int, best_individual: Optional[Individual], best_fitness: float):
+    def save_checkpoint(
+        self,
+        generation: int,
+        best_individual: Optional[Individual],
+        best_fitness: float,
+        population: Optional[Population] = None,
+    ) -> None:
         """
         Salva checkpoint incremental do progresso.
 
+        Conteúdo persistido:
+
+        - Identificação: timestamp, generation, total_generations
+        - Melhor global: best_individual + best_fitness
+        - Estatísticas: completed_generations, total_evaluations, cache_size,
+          cache_hits, cache_misses
+        - **População atual** (se ``population`` for fornecido): lista de
+          indivíduos com geração — permite reconstruir o estado evolutivo
+          de onde parou.
+        - **RNG state** (``random.getstate()``): tornar a retomada do GA
+          determinística. Sem isso, o `random.seed(seed)` do __init__ não
+          é suficiente — o avanço do PRNG durante a run precisa ser
+          preservado para evitar viés de re-execução.
+
+        O checkpoint é sobrescrito a cada chamada (não é append-only). Se
+        precisar de histórico completo, use `evaluations.csv` + `cache.jsonl`.
+
         Args:
-            generation: Geração atual
-            best_individual: Melhor indivíduo até agora
-            best_fitness: Melhor fitness até agora
+            generation: Geração atual (1-indexed para humano).
+            best_individual: Melhor indivíduo até agora.
+            best_fitness: Melhor fitness até agora.
+            population: População atual (opcional). Se fornecida, é
+                persistida para permitir retomada.
         """
         if not self.checkpoint_file:
             return
 
         try:
-            checkpoint_data = {
+            checkpoint_data: dict[str, Any] = {
                 "timestamp": datetime.now().isoformat(),
                 "generation": generation,
                 "total_generations": self.params.generations,
+                "seed": self.params.seed,
                 "best_individual": best_individual.to_dict() if best_individual else None,
                 "best_fitness": best_fitness,
                 "completed_generations": len(self.history),
                 "total_evaluations": len(self.evaluation_results),
                 "cache_size": self.cache.size(),
+                "cache_hits": self.cache_hits,
+                "cache_misses": self.cache_misses,
             }
+
+            if population is not None:
+                checkpoint_data["population"] = {
+                    "generation": population.generation,
+                    "individuals": [
+                        ind.to_dict() for ind in population.individuals
+                    ],
+                }
+
+            # RNG state: tupla complexa (versão, estado interno, gauss_next).
+            # `random.getstate()` retorna formato não-JSON-nativo; salvamos
+            # como lista para round-trip via json.
+            try:
+                rng_state = random.getstate()
+                checkpoint_data["rng_state"] = [
+                    rng_state[0],            # version
+                    list(rng_state[1]),      # internal state (tuple → list)
+                    rng_state[2],            # gauss_next (float ou None)
+                ]
+            except Exception as rng_err:
+                # RNG state é nice-to-have; não bloqueia o checkpoint.
+                log(f"Could not capture RNG state: {rng_err}", level="debug")
 
             checkpoint_path = Path(self.checkpoint_file)
             checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
