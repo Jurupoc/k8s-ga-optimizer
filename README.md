@@ -128,7 +128,8 @@ nsga/
 ├── ...
 ├── cache.jsonl                  # Persistent cache keyed by genome + load_profile + load_params
 ├── summary.json                 # Cache stats, total time, final Pareto size
-└── experiment.log
+├── evaluations.csv              # Long-format: one row per evaluation across all generations
+└── env.json                     # Python/git/k8s/hostname metadata for reproducibility
 ```
 
 The cache key includes `load_params` (duration, concurrency, endpoint, etc.), so changing any of them automatically invalidates stale measurements.
@@ -386,7 +387,7 @@ To modify weights, edit the `FitnessWeights` dataclass in `ga/fitness.py`.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PROMETHEUS_URL` | `http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090` | Prometheus server URL |
+| `PROMETHEUS_URL` | `http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090` | Prometheus server URL |
 | `PROM_QUERY_TIMEOUT` | `10` | Query timeout (seconds) |
 | `PROM_RETRY_ATTEMPTS` | `3` | Max query retry attempts |
 | `PROM_RETRY_DELAY` | `1.0` | Retry delay (seconds) |
